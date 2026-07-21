@@ -94,6 +94,11 @@ details.adv summary{cursor:pointer; color:var(--navy); font-weight:700; font-siz
 .tl-bad{background:#c05f4a; color:#fff;}
 .tl-mid{background:transparent; border:1px solid #d8d0bd; color:var(--ink);}
 .tl-warn{font-weight:800;}
+/* 배우자궁 마찰 경중: 색이 진하고 붉을수록 강함 (충>원진>형>해·자형) */
+.tl-w-chung {color:#b32d1c; font-weight:800;}
+.tl-w-wonjin{color:#d4691a; font-weight:800;}
+.tl-w-hyung {color:#c8960c; font-weight:700;}
+.tl-w-hae   {color:#a99668; font-weight:600;}
 .tl-legend{font-size:.74rem; color:var(--sub); margin-top:6px;}
 .tl-legend .lg{display:inline-block; margin-right:10px;}
 .lg-good{color:#38689c;} .lg-bad{color:#a54834;}
@@ -299,7 +304,8 @@ footer{max-width:880px; margin:10px auto 40px; padding:0 16px; font-size:.78rem;
       <label class="rc-label">장기 흐름
         <select id="x-warn-sel">
           <option value="all">전체</option>
-          <option value="nowarn">주의 제외</option>
+          <option value="nochung">충 주의 제외</option>
+          <option value="nowarn">충+동반 주의 제외</option>
           <option value="goodonly">순탄만</option>
         </select>
       </label>
@@ -690,8 +696,9 @@ function marriageYears(A,B,ctx,winStart,winEnd){
   all.sort((a,b)=>b.n-a.n || a.Y-b.Y);
   return all.slice(0,3).sort((a,b)=>a.Y-b.Y);
 }
-function flowGrade(wa, wb, chA, chB, winY0, yongApplied){
+function flowGrade(wa, wb, chA, chB, wjA, wjB, winY0, yongApplied){
   // 등급 판정은 20년 창(근미래 가중), 부부궁 충 스캔은 30년 전체 — 어떤 구간의 충도 숨기지 않음
+  // 주의는 원인을 구분: '충'(정통·관계 단절 리스크) / '동반'(두 사람 겹치기 — 동반 역풍 or 원진 동반)
   let bothGood=0, bothBad=0;
   for(let i=0;i<20;i++){
     if(wa[i]==='good' && wb[i]==='good') bothGood++;
@@ -699,13 +706,28 @@ function flowGrade(wa, wb, chA, chB, winY0, yongApplied){
   }
   let first=null;
   for(let y=winY0; y<winY0+30; y++){ if(chA.has(y) || chB.has(y)){ first=y; break; } }
-  const near = first!=null && first < winY0+10;
+  const near = first!=null && first < winY0+10;   // 충 주의 트리거
   const mid20 = first!=null && first < winY0+20;
   const far = first!=null && first >= winY0+20;
+  // 원진 동반: 20년 창에서 두 사람이 동시에 원진 대운인 최장 연속 (원진=부부 만성독, 충급 논거)
+  let wjRun=0, wjMax=0;
+  for(let y=winY0; y<winY0+20; y++){ if(wjA.has(y) && wjB.has(y)){ wjRun++; if(wjRun>wjMax) wjMax=wjRun; } else wjRun=0; }
+  const headwindDong = bothBad>=6;    // 동반 역풍
+  const wonjinDong = wjMax>=2;        // 원진 동반 2년+
+  const near2 = near, dongban = headwindDong || wonjinDong;
+  const causes=[];
+  if(near2) causes.push('충');
+  if(dongban) causes.push('동반');
   let g,label,why;
-  if(near){ g='warn'; label='주의'; why='부부궁 충 대운이 '+first+'년경 시작 — 큰 결정은 신중히'; }
-  else if(bothBad>=6){ g='warn'; label='주의'; why='두 사람의 역풍 대운이 '+bothBad+'년 겹침 — 큰 결정은 신중히'; }
-  else if(!mid20 && bothBad<=2 && (!yongApplied || bothGood>=8)){
+  if(causes.length){
+    g='warn'; label='주의 · '+causes.join('+');
+    const ws=[];
+    if(near2) ws.push('부부궁 충 대운이 '+first+'년경 시작');
+    if(headwindDong) ws.push('동반 역풍 '+bothBad+'년');
+    if(wonjinDong) ws.push('원진 동반 '+wjMax+'년');
+    why=ws.join(' · ')+' — 큰 결정은 신중히';
+  }
+  else if(!mid20 && bothBad<=2 && wjMax===0 && (!yongApplied || bothGood>=8)){
     g='good'; label='순탄';
     why='20년 내 부부궁 충 없음'+(yongApplied?' · 동반 순풍 '+bothGood+'년':'')+(far?' · 다만 '+first+'년경 충 (먼 미래)':'');
   }
@@ -715,7 +737,7 @@ function flowGrade(wa, wb, chA, chB, winY0, yongApplied){
       : (yongApplied ? '동반 순풍 '+bothGood+'년 · 동반 역풍 '+bothBad+'년' : '특이 신호 없음')
         + (far?' · '+first+'년경 충 (먼 미래)':'');
   }
-  return {g, label, why, first, far};
+  return {g, label, why, first, far, causes};
 }
 
 // 상대 스타일(성격) — 궁합 점수와 별개, 일간 기질 + 최강 십성으로 서술
@@ -1231,7 +1253,8 @@ if(typeof document !== 'undefined'){
       const yrs = cl.to-cl.from+1;
       const name = cl.pre ? '대운 전' : ST[cl.s]+BR[cl.b];
       const tag = cl.wind==='good' ? ' 순' : (cl.wind==='bad' ? ' 역' : '');
-      const warn = cl.burden ? '<span class="tl-warn" title="배우자궁(일지) '+cl.burdenType+' 구간'+(cl.chung?'':' — 정충보다 약한 신호')+'">⚠</span>' : '';
+      const wcls = cl.burdenType==='충'?'tl-w-chung':cl.burdenType==='원진'?'tl-w-wonjin':cl.burdenType==='형'?'tl-w-hyung':'tl-w-hae';
+      const warn = cl.burden ? '<span class="tl-warn '+wcls+'" title="배우자궁(일지) '+cl.burdenType+' 구간'+(cl.chung?' — 정충(가장 강함)':' — 충보다 약한 신호')+'">⚠</span>' : '';
       const title = (cl.pre?'첫 대운 이전':name+' 대운')+' '+cl.from+'~'+cl.to
         + (cl.wind==='good'?' · 순풍(용신을 돕는 운)':cl.wind==='bad'?' · 역풍(용신을 극하는 운)':'')
         + (cl.burden?' · 배우자궁 '+cl.burdenType+' 주의'+(cl.chung?'':' (충보다 약함)'):'');
@@ -1246,9 +1269,9 @@ if(typeof document !== 'undefined'){
     const tlA = timelineFor(res.A, res.myG, myYong, winY0, winN);
     const tlB = timelineFor(c, res.ptG, bYong, winY0, winN);
     const wa=windByYear(tlA.cells,winY0,winN), wb=windByYear(tlB.cells,winY0,winN);
-    const chA=new Set(), chB=new Set();
-    tlA.cells.forEach(x=>{ if(x.chung) for(let y=x.from;y<=x.to;y++) chA.add(y); });
-    tlB.cells.forEach(x=>{ if(x.chung) for(let y=x.from;y<=x.to;y++) chB.add(y); });
+    const chA=new Set(), chB=new Set(), wjA=new Set(), wjB=new Set();
+    tlA.cells.forEach(x=>{ if(x.chung) for(let y=x.from;y<=x.to;y++) chA.add(y); if(x.burdenType==='원진') for(let y=x.from;y<=x.to;y++) wjA.add(y); });
+    tlB.cells.forEach(x=>{ if(x.chung) for(let y=x.from;y<=x.to;y++) chB.add(y); if(x.burdenType==='원진') for(let y=x.from;y<=x.to;y++) wjB.add(y); });
     // 세운 창: 목표 시기를 입력하면 그 구간(과거 복기 포함), 아니면 기본 근미래(RECO_WIN년)
     const wS = res.target ? res.target[0] : CUR_YEAR;
     const wE = res.target ? res.target[1] : CUR_YEAR+RECO_WIN-1;
@@ -1262,7 +1285,7 @@ if(typeof document !== 'undefined'){
     const sbgA=daewoonMarriageBg(res.A,res.myG,sLo,sN), sbgB=daewoonMarriageBg(c,res.ptG,sLo,sN);
     const years = marriageYearsAll(res.A, c, {winY0:sLo, wa:swa, wb:swb, chA:schA, chB:schB, bgA:sbgA, bgB:sbgB}, wS, wE);
     const chAll = new Set([...chA, ...chB]);
-    const flow = flowGrade(wa, wb, chA, chB, winY0, res.yong!=null);
+    const flow = flowGrade(wa, wb, chA, chB, wjA, wjB, winY0, res.yong!=null);
     const parts=[];
     if(myYong!=null){
       let both=0; const bothBad=[];
@@ -1274,6 +1297,10 @@ if(typeof document !== 'undefined'){
     const chAr=tlA.cells.filter(x=>x.burden).map(x=>x.from+'~'+x.to+'('+x.burdenType+')');
     const chBr=tlB.cells.filter(x=>x.burden).map(x=>x.from+'~'+x.to+'('+x.burdenType+')');
     parts.push('배우자궁 충·형 등 구간 — 나: '+(chAr.length?chAr.join(', '):'없음')+' / 상대: '+(chBr.length?chBr.join(', '):'없음'));
+    // 원진 동반: 두 사람이 동시에 원진 대운인 구간 (부부 만성독 겹침)
+    const bothWj=[]; for(let y=winY0;y<winY0+winN;y++) bothWj.push(wjA.has(y)&&wjB.has(y));
+    const wjr=yearRanges(bothWj,winY0);
+    if(wjr.length) parts.push('⚠ 원진 동반(두 분 다 원진 대운): '+wjr.join(', '));
     // 구간 내 유리한 해를 연도순으로 모두 표시(과다하면 상한 12), 강한 순 ★
     const CAP=12;
     const chrono = years.slice().sort((a,b)=>a.Y-b.Y);
@@ -1284,7 +1311,7 @@ if(typeof document !== 'undefined'){
       : winLabel+' 중 두 사람 모두에게 신호가 있는 해가 없습니다';
     const legend = '<div class="tl-legend">'
       + (myYong!=null ? '<span class="lg lg-good">■ 순풍(용신을 돕는 대운)</span><span class="lg lg-bad">■ 역풍(용신을 극하는 대운)</span><span class="lg">□ 중립</span>' : '')
-      + '<span class="lg">⚠ 배우자궁 충·형·원진·해</span></div>';
+      + '<span class="lg">배우자궁 마찰(진할수록 강함): <span class="tl-w-chung">⚠충</span> <span class="tl-w-wonjin">⚠원진</span> <span class="tl-w-hyung">⚠형</span> <span class="tl-w-hae">⚠해</span></span></div>';
     const html = '<details><summary>장기 흐름 · 시기 보기 (대운/세운)</summary><div class="tl">'
       + '<div class="tl-row"><span class="tl-name">나</span><div class="tl-band">'+tlCellsHtml(tlA.cells)+'</div></div>'
       + '<div class="tl-row"><span class="tl-name">상대</span><div class="tl-band">'+tlCellsHtml(tlB.cells)+'</div></div>'
@@ -1294,8 +1321,8 @@ if(typeof document !== 'undefined'){
       + '<p class="note">'+CUR_YEAR+'년부터 30년 창.'
       + (myYong!=null?' 순풍/역풍은 각자의 용신 기준(나: 선택값 / 상대: 자동 억부 판단).':'')
       + ' 세운 계산 구간: '+winLabel+(res.target?' (목표 시기)':' (기본 근미래)')+'. 방아쇠(2층)=배우자성 도래(천간1·지지0.5)+배우자궁 합1·충0.5+일간 명암합0.5, 여기에 지배 대운이 결혼기면(1층) 증폭. ★=합산 강도 3.2+. 양쪽 모두 방아쇠 있고 합산 2+ 인 해만, 배우자궁 충 대운의 해는 제외.'
-      + ' 대운 지지의 오행과, 배우자궁과의 충(등급·시기 판정에 반영)·형·원진·해(⚠ 표시만, 등급엔 미반영)를 보는 보수적 계산이며, 점수에는 포함되지 않습니다.'
-      + ' 흐름 등급(20년 창): 주의=부부궁 충이 10년 내 시작 또는 동반 역풍 6년 이상 / 순탄=충 없음·동반 역풍 2년 이하'+(myYong!=null?'·동반 순풍 8년 이상':'')+'.</p>'
+      + ' 대운 지지의 오행과, 배우자궁 마찰(충>원진>형>해, 색이 진할수록 강함)을 보는 보수적 계산이며, 점수에는 포함되지 않습니다.'
+      + ' 흐름 등급(20년 창): <b>주의·충</b>=부부궁 정충이 10년 내 시작(관계 단절 리스크) / <b>주의·동반</b>=동반 역풍 6년 이상 또는 원진 동반 2년 이상(두 분이 동시에 마찰기) / 순탄=충·원진 동반 없음·동반 역풍 2년 이하'+(myYong!=null?'·동반 순풍 8년 이상':'')+'. 형·해 등 약한 마찰은 표시만 하고 등급엔 넣지 않습니다.</p>'
       + '</div></details>';
     return { html, years, chAll, flow };
   }
@@ -1315,8 +1342,9 @@ if(typeof document !== 'undefined'){
     return '신호 없음';
   }
   function flowBadgeHtml(flow){
-    return '<span class="flow-badge flow-'+flow.g+'" title="'+flow.why+'">흐름: '+flow.label
-      +(flow.first!=null ? ' · 충 '+flow.first+'~'+(flow.far?' (먼 미래)':'') : '')+'</span>';
+    // 충 연도는 라벨에 '충'이 없을 때(순탄/보통/주의·동반)만 병기 — 라벨과 중복 방지
+    const yr = (flow.first!=null && flow.causes.indexOf('충')<0) ? ' <small>(충 '+flow.first+'~'+(flow.far?' 먼 미래':'')+')</small>' : '';
+    return '<span class="flow-badge flow-'+flow.g+'" title="'+flow.why+'">흐름: '+flow.label+yr+'</span>';
   }
   function buildReco(res){
     // 범위 내 모든 날짜(시주 제외)를 채점해 일주별 평균으로 집계 — 평균 = "이 일주가 보통 나와 맞는 정도"
@@ -1424,7 +1452,8 @@ if(typeof document !== 'undefined'){
       let tChung = 0;
       if(res.target){ for(let y=res.target[0]; y<=res.target[1]; y++) if(tl.chAll.has(y)) tChung++; }
       const tBest = res.target ? timingBest(tl.years, res.target) : 0;
-      if(flowMode==='nowarn' && tl.flow.g==='warn') continue;             // 흐름 주의 제외
+      if(flowMode==='nochung' && tl.flow.causes.indexOf('충')>=0) continue; // 충 주의만 제외
+      if(flowMode==='nowarn' && tl.flow.g==='warn') continue;             // 충+동반 주의 모두 제외
       if(flowMode==='goodonly' && tl.flow.g!=='good') continue;           // 순탄만
       if(res.target && signalMode==='nosignal' && tBest<1) continue;      // 신호 없음 제외
       if(res.target && signalMode==='staronly' && tBest<3.2) continue;    // ★ 매우 유리만
