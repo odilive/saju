@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>사주 궁합 역검색 — 나와 잘 맞는 생년월일시 찾기</title>
+<style>
+:root{
+  --bg:#faf6ef; --card:#ffffff; --ink:#2b2620; --sub:#7a7161;
+  --accent:#b3372f; --navy:#1f3a5f; --line:#e6ddcc; --gold:#b08820;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{background:var(--bg); color:var(--ink); font-family:'Noto Sans KR','Malgun Gothic',system-ui,sans-serif; line-height:1.6;}
+main{max-width:880px; margin:0 auto; padding:16px;}
+header{text-align:center; padding:36px 16px 20px;}
+header h1{font-size:1.7rem; color:var(--navy); letter-spacing:-.02em;}
+header h1 .red{color:var(--accent);}
+header p{color:var(--sub); font-size:.95rem; margin-top:6px;}
+.card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:22px; margin-bottom:18px; box-shadow:0 1px 4px rgba(60,45,20,.06);}
+.card h2{font-size:1.05rem; color:var(--navy); margin-bottom:14px; padding-bottom:8px; border-bottom:2px solid var(--line);}
+.grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px;}
+.grid-2{grid-template-columns:1fr 1fr;}
+label.f{display:block; font-size:.85rem; color:var(--sub); margin-bottom:4px;}
+input,select{width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px; font-size:.95rem; background:#fffdf8; color:var(--ink); font-family:inherit;}
+input:focus,select:focus{outline:2px solid #d9c9a8;}
+.row-inline{display:flex; align-items:center; gap:8px; margin-top:8px; font-size:.9rem;}
+.row-inline input[type=checkbox]{width:auto;}
+.radio-group{display:flex; gap:14px; padding:9px 0; font-size:.95rem;}
+.radio-group input{width:auto; margin-right:4px;}
+button.primary{display:block; width:100%; padding:14px; margin-top:6px; background:var(--accent); color:#fff; border:none; border-radius:10px; font-size:1.05rem; font-weight:700; cursor:pointer; font-family:inherit;}
+button.primary:hover{background:#9a2d26;}
+button.primary:disabled{background:#c9b9a4; cursor:wait;}
+button.ghost{padding:8px 14px; background:#fff; color:var(--navy); border:1px solid var(--line); border-radius:8px; cursor:pointer; font-size:.85rem; font-family:inherit;}
+button.ghost:hover{background:#f4eee1;}
+#status{text-align:center; color:var(--sub); font-size:.9rem; margin:8px 0;}
+/* 만세력 타일 그리드 — 위 천간 / 아래 지지 (컴팩트) */
+.pgrid{display:inline-flex; gap:4px; margin-top:8px;}
+.pcol{display:flex; flex-direction:column; align-items:center; gap:2px;}
+.plabel{font-size:.6rem; color:var(--sub);}
+.tile{width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:6px; font-size:1.02rem; font-weight:700;}
+.pgrid.compact .tile{width:27px; height:27px; font-size:.9rem;}
+.tile.empty{background:#f6f2e8; color:#b9b09c; border:1px dashed #d8d0bd;}
+/* 오행 배경색 — 목=녹 화=적 토=황토 금=백 수=흑 (타일·Top5 네모 공용) */
+.t0{background:#2e7d4f;color:#fff;} .t1{background:#c0392b;color:#fff;} .t2{background:#9a7418;color:#fff;}
+.t3{background:#e9e4d6;color:#4a463c;border:1px solid #cfc9ba;} .t4{background:#2f3540;color:#fff;}
+.sq{display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; font-weight:800; font-size:1.05rem; vertical-align:middle; margin-right:2px;}
+.chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;}
+.chip{padding:2px 9px; border-radius:99px; color:#fff; font-size:.75rem; font-weight:700;}
+.e0{background:#2e7d4f;} .e1{background:#c0392b;} .e2{background:#b08820;} .e3{background:#8a8f98;} .e4{background:#2c5f8a;}
+.note{font-size:.82rem; color:var(--sub); margin-top:10px;}
+.result-item{border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:10px; background:#fffdf8;}
+.result-top{display:flex; flex-wrap:wrap; align-items:baseline; gap:10px;}
+.rank{color:var(--gold); font-weight:800; font-size:1rem; min-width:2.6em;}
+.rdate{font-weight:700; font-size:1.05rem;}
+.rhour{color:var(--navy); font-size:.9rem;}
+.score{margin-left:auto; font-weight:800; font-size:1.25rem; color:var(--accent);}
+.grade{font-size:.8rem; color:#fff; background:var(--navy); border-radius:6px; padding:2px 8px;}
+.rpillars{font-size:.88rem; color:var(--sub); margin-top:4px;}
+.result-item details{margin-top:8px; font-size:.86rem;}
+.result-item summary{cursor:pointer; color:var(--navy); font-weight:600;}
+.result-item li{margin-left:18px; margin-top:3px;}
+.plus{color:#1e7a3c; font-weight:700;} .minus{color:#b3372f; font-weight:700;}
+.results-head{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:12px;}
+details.adv{margin-top:14px; border-top:1px dashed var(--line); padding-top:12px;}
+details.adv summary{cursor:pointer; color:var(--navy); font-weight:700; font-size:.95rem;}
+.adv-block{margin-top:14px;}
+.el-grid{display:grid; grid-template-columns:repeat(5,minmax(64px,1fr)); gap:8px;}
+.el-grid label{font-size:.8rem; color:var(--sub); display:block; text-align:center; margin-bottom:2px;}
+.el-grid input{text-align:center;}
+.chk-col{display:flex; flex-direction:column; gap:6px; font-size:.9rem;}
+.chk-col input{width:auto; margin-right:6px;}
+.w-row{display:flex; align-items:center; gap:10px; font-size:.88rem; margin-top:6px;}
+.w-row span.wl{width:10.5em; color:var(--sub); flex-shrink:0;}
+.w-row input[type=range]{flex:1; padding:0;}
+.w-row b{width:3.4em; text-align:right; color:var(--navy);}
+.an-verdict{font-size:.92rem; font-weight:800; color:var(--navy); margin-top:12px;}
+.an-why{font-size:.78rem; color:var(--sub); margin-top:3px; line-height:1.6;}
+.an-boxes{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:8px; margin-top:8px;}
+.an-box{border:1px solid var(--line); border-radius:8px; padding:9px 11px; background:#fffdf8; font-size:.8rem; line-height:1.55;}
+.an-box h3{font-size:.75rem; color:var(--gold); margin-bottom:3px;}
+.an-agree{margin-top:8px; padding:6px 10px; border-radius:8px; font-size:.79rem; background:#e9f0e2; color:#2f5a2f;}
+.an-disagree{background:#f7ecd9; color:#7a5211;}
+.an-jong{background:#f7e3de; color:#8a2c1d;}
+.yong-pick{margin-top:10px; display:flex; flex-direction:column; gap:5px; font-size:.85rem;}
+.yong-pick input[type=radio]{width:auto; margin-right:6px;}
+.yong-pick select{width:auto; padding:4px 8px; margin-left:6px; display:inline-block;}
+.tl{margin-top:10px;}
+.tl-row{display:flex; align-items:stretch; gap:6px; margin-top:4px;}
+.tl-name{width:2.8em; font-size:.78rem; color:var(--sub); display:flex; align-items:center; flex-shrink:0;}
+.tl-band{display:flex; flex:1; gap:2px; min-width:0;}
+.tl-cell{padding:3px 2px; font-size:.72rem; text-align:center; border-radius:4px; overflow:hidden; white-space:nowrap; min-width:0; flex-basis:0;}
+.tl-cell small{display:block; font-size:.62rem; opacity:.85;}
+.tl-good{background:#4a7fb5; color:#fff;}
+.tl-bad{background:#c05f4a; color:#fff;}
+.tl-mid{background:transparent; border:1px solid #d8d0bd; color:var(--ink);}
+.tl-warn{font-weight:800;}
+.tl-legend{font-size:.74rem; color:var(--sub); margin-top:6px;}
+.tl-legend .lg{display:inline-block; margin-right:10px;}
+.lg-good{color:#38689c;} .lg-bad{color:#a54834;}
+.tl-sum{font-size:.83rem; margin-top:8px; line-height:1.7;}
+.tl-badge{font-size:.85rem; margin-top:6px;}
+.tl-badge b{color:var(--accent);}
+.preset-row{display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;}
+.preset-btn.active,.xfilter-btn.active{background:var(--navy); color:#fff; border-color:var(--navy);}
+.badges-row{display:flex; flex-wrap:wrap; gap:6px; margin-top:7px;}
+.tgt-badge{font-size:.78rem; background:#f4eee1; border:1px solid var(--line); border-radius:6px; padding:2px 8px; color:var(--navy);}
+.reco-item{border:1px solid #d9b45a; background:#fffcf3;}
+.reco-style{font-size:.83rem; color:var(--ink); margin-top:6px;} .reco-style b{color:var(--navy);}
+.score small{font-size:.72rem; color:var(--sub); font-weight:600;}
+.reco-count{font-size:.8rem; color:var(--sub); margin-top:4px;}
+.raw-controls{display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:12px;}
+.rc-label{font-size:.85rem; color:var(--sub); display:flex; align-items:center; gap:6px;}
+.rc-label select{width:auto; padding:6px 8px;}
+.reco-why{font-size:.83rem; color:var(--sub); margin-top:6px; line-height:1.6;}
+.reco-note{font-size:.8rem; color:var(--sub); margin:4px 0 14px;}
+.flow-badge{font-size:.78rem; border-radius:6px; padding:2px 8px; cursor:help;}
+.flow-good{background:#e9f0e2; color:#2f5a2f;}
+.flow-mid{background:#f4eee1; color:#7a7161;}
+.flow-warn{background:#f7e3de; color:#8a2c1d; font-weight:700;}
+footer{max-width:880px; margin:10px auto 40px; padding:0 16px; font-size:.78rem; color:var(--sub); line-height:1.7;}
+@media (max-width:560px){
+  main{padding:10px;}
+  header{padding:24px 12px 12px;}
+  header h1{font-size:1.35rem;}
+  .card{padding:16px 14px; border-radius:12px;}
+  .grid{grid-template-columns:1fr;}
+  .grid-2{grid-template-columns:1fr 1fr;}
+  .pgrid{max-width:100%; gap:5px;}
+  .el-grid{grid-template-columns:repeat(5,1fr); gap:5px;}
+  .el-grid input{padding:6px 2px;}
+  .w-row span.wl{width:8.5em; font-size:.8rem;}
+  .result-item{padding:12px;}
+  .result-top{gap:6px;}
+  .rank{min-width:2.2em;}
+  .rdate{font-size:.98rem;}
+  .rhour{font-size:.82rem;}
+  .score{width:100%; text-align:right;}
+  .tile{font-size:1rem;}
+  .tl-name{width:2.2em;}
+  .tl-cell{font-size:.6rem; padding:2px 1px;}
+  .tl-cell small{font-size:.52rem;}
+  button.primary{font-size:1rem; padding:12px;}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>사주 궁합 <span class="red">역검색</span></h1>
+  <p>상대를 정해 놓고 궁합을 보는 대신, 나와 궁합이 좋은 생년월일시를 먼저 찾아봅니다</p>
+</header>
+<main>
+
+<section class="card">
+  <h2>1. 내 정보</h2>
+  <div class="grid">
+    <div>
+      <label class="f" for="birth-date">생년월일 (양력)</label>
+      <input type="date" id="birth-date" min="1905-01-01" max="2049-12-31">
+    </div>
+    <div>
+      <label class="f" for="birth-time">태어난 시각</label>
+      <input type="time" id="birth-time" value="12:00">
+      <div class="row-inline"><input type="checkbox" id="time-unknown"><label for="time-unknown">시간 모름 (시주 제외)</label></div>
+    </div>
+    <div>
+      <label class="f">성별</label>
+      <div class="radio-group">
+        <label><input type="radio" name="my-gender" value="M" checked>남성</label>
+        <label><input type="radio" name="my-gender" value="F">여성</label>
+      </div>
+    </div>
+    <div>
+      <label class="f" for="tz-mode">시간 기준</label>
+      <select id="tz-mode">
+        <option value="corrected" selected>한국 표준시 30분 보정 (권장)</option>
+        <option value="raw">보정 없음 (시계 시각 그대로)</option>
+      </select>
+    </div>
+  </div>
+  <p class="note">※ 음력 생일은 양력으로 변환 후 입력해 주세요. 한국은 동경 135° 표준시를 사용해 실제 태양시보다 약 30분 빠르므로, 국내 출생자는 30분 보정을 권장합니다 (자시 23:30~01:30 기준).</p>
+  <button class="ghost" id="analyze-btn" style="margin-top:12px;">① 내 사주 분석하기 (신강약 · 용신)</button>
+  <div id="my-analysis-wrap" hidden style="border-top:1px dashed var(--line); margin-top:14px;">
+    <div id="my-chart"></div>
+    <div id="my-analysis"></div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. 상대 검색 조건</h2>
+  <div class="grid grid-2">
+    <div>
+      <label class="f" for="year-from">상대 출생년도 (부터)</label>
+      <input type="number" id="year-from" min="1905" max="2049" placeholder="예: 1988">
+    </div>
+    <div>
+      <label class="f" for="year-to">상대 출생년도 (까지)</label>
+      <input type="number" id="year-to" min="1905" max="2049" placeholder="예: 2000">
+    </div>
+  </div>
+  <div class="grid grid-2" style="margin-top:14px;">
+    <div>
+      <label class="f" for="t-from">목표 결혼 시기 시작 (선택)</label>
+      <input type="number" id="t-from">
+    </div>
+    <div>
+      <label class="f" for="t-to">목표 결혼 시기 끝 (선택)</label>
+      <input type="number" id="t-to">
+    </div>
+  </div>
+  <p class="note">상대 성별은 내 성별의 이성으로 자동 설정됩니다. 출생년도 범위는 내 생년월일 변경 시 ±8년으로 자동 갱신됩니다.</p>
+  <p class="note">목표 시기를 입력하면 순위 점수는 그대로 두고, 각 상대에게 "그 시기의 성사 적합도" 배지가 붙습니다. 목표를 비우면 기본 근미래(향후 10년)의 성사 유리 해를 보여줍니다. 목표는 과거 30년 ~ 미래 29년 범위에서 지정할 수 있어(과거 복기 가능), 전체 목록의 "목표 시기" 드롭다운으로 신호 없음/★매우유리만 필터링됩니다.</p>
+
+  <details class="adv" id="adv">
+    <summary>상세 조건 · 가중치 조정 (선택) — 원하는 일주·오행 조건으로 찾기</summary>
+    <div class="adv-block grid">
+      <div>
+        <label class="f" for="f-ds">상대 일간 지정</label>
+        <select id="f-ds"><option value="">무관</option></select>
+      </div>
+      <div>
+        <label class="f" for="f-db">상대 일지 지정</label>
+        <select id="f-db"><option value="">무관</option></select>
+      </div>
+    </div>
+    <p class="note">예: 계묘일주를 원하면 일간 계(癸) + 일지 묘(卯). 천간·지지의 음양이 같아야 존재하는 일주입니다.</p>
+    <div class="adv-block">
+      <label class="f">상대 오행 최소 개수 (8글자 기준, 지지는 본기로 계산)</label>
+      <div class="el-grid" id="el-grid"></div>
+    </div>
+    <div class="adv-block">
+      <label class="f">배제 조건 (체크하면 해당하는 상대를 결과에서 제외)</label>
+      <div class="chk-col">
+        <label><input type="checkbox" id="x-ilji-chung">내 일지와 충(冲)인 일지 제외</label>
+        <label><input type="checkbox" id="x-ilji-wonjin">내 일지와 원진(元嗔)인 일지 제외</label>
+        <label><input type="checkbox" id="x-ilji-hyunghae">내 일지와 형(刑)·해(害)인 일지 제외</label>
+        <label><input type="checkbox" id="x-year-chung">내 띠(년지)와 충인 띠 제외</label>
+        <label><input type="checkbox" id="x-gan-chung">내 일간과 천간충인 일간 제외</label>
+      </div>
+    </div>
+    <div class="adv-block">
+      <label class="f">목적 프리셋 — 무엇을 중시할지 고르면 아래 가중치가 자동 설정됩니다</label>
+      <div class="preset-row">
+        <button type="button" class="ghost preset-btn active" data-preset="balance">균형 (기본)</button>
+        <button type="button" class="ghost preset-btn" data-preset="attract">성사·끌림</button>
+        <button type="button" class="ghost preset-btn" data-preset="stable">해로·안정</button>
+        <button type="button" class="ghost preset-btn" data-preset="intimacy">속궁합</button>
+      </div>
+    </div>
+    <div class="adv-block">
+      <label class="f">점수 가중치 (50~150% 범위에서 미세 조정 — 순위는 항상 100점 만점으로 재정규화됩니다)</label>
+      <div id="w-rows"></div>
+    </div>
+  </details>
+
+  <button class="ghost" id="reset-cond-btn" style="margin-bottom:8px;">검색 조건 초기화 (상세 조건·가중치·목표 시기 포함)</button>
+  <button class="primary" id="search-btn">궁합 좋은 생년월일시 찾기</button>
+  <p id="status"></p>
+</section>
+
+<section class="card">
+  <h2>특정 상대와 1:1 궁합</h2>
+  <p class="note">이미 마음에 둔 상대가 있으면 생년월일시를 넣어 직접 궁합을 봅니다 (역검색과 별개). 상대 성별은 내 성별의 이성으로, 30분 보정·용신·가중치는 내 설정을 따릅니다.</p>
+  <div class="grid grid-2">
+    <div>
+      <label class="f" for="p1-date">상대 생년월일 (양력)</label>
+      <input type="date" id="p1-date" min="1905-01-01" max="2049-12-31">
+    </div>
+    <div>
+      <label class="f" for="p1-time">상대 태어난 시각</label>
+      <input type="time" id="p1-time" value="12:00">
+      <div class="row-inline"><input type="checkbox" id="p1-unknown"><label for="p1-unknown">시간 모름</label></div>
+    </div>
+  </div>
+  <button class="primary" id="p1-btn" style="margin-top:8px;">1:1 궁합 보기</button>
+  <div id="p1-out"></div>
+</section>
+
+<section class="card" id="reco-card" hidden>
+  <h2>추천 일주 Top 5 — 나와 보통 잘 맞는 상대 유형</h2>
+  <p class="note" id="results-summary"></p>
+  <div id="reco"></div>
+</section>
+
+<section class="card" id="results-card" hidden>
+  <div class="results-head">
+    <h2 style="border:none; margin:0; padding:0;">전체 목록 — 시진 단위 원자료</h2>
+    <button class="ghost" id="more-btn">더보기 ▾</button>
+  </div>
+  <div id="raw-wrap" hidden>
+    <div class="raw-controls">
+      <label class="rc-label">표시 개수
+        <select id="top-n">
+          <option value="10">상위 10</option>
+          <option value="30" selected>상위 30</option>
+          <option value="50">상위 50</option>
+          <option value="100">상위 100</option>
+        </select>
+      </label>
+      <label class="rc-label">장기 흐름
+        <select id="x-warn-sel">
+          <option value="all">전체</option>
+          <option value="nowarn">주의 제외</option>
+          <option value="goodonly">순탄만</option>
+        </select>
+      </label>
+      <label class="rc-label" id="x-signal-wrap" hidden>목표 시기
+        <select id="x-signal-sel">
+          <option value="all">전체</option>
+          <option value="nosignal">신호 없음 제외</option>
+          <option value="staronly">★ 매우 유리만</option>
+        </select>
+      </label>
+      <button class="ghost" id="csv-btn">CSV 내려받기</button>
+    </div>
+    <div id="results"></div>
+  </div>
+</section>
+
+</main>
+<footer>
+  <strong>이용 안내</strong> — 본 도구는 전통 명리학의 궁합 이론(천간합·지지 합충형해원진·오행 상보 등)을 단순화하여 점수화한 참고·오락용 도구입니다.
+  명리학은 유파에 따라 해석이 크게 다르며, 점수가 실제 관계의 좋고 나쁨을 보장하지 않습니다.
+  절기(절입) 시각은 천문 근사식으로 계산되어 실제 만세력과 수 분 정도 차이가 날 수 있고, 절입일 전후 출생은 월주가 달라질 수 있습니다.
+  중요한 인생 결정의 근거로 사용하지 마세요.
+</footer>
+
+<script>
+'use strict';
+/* ===================== 기초 데이터 ===================== */
+const ST  = ['갑','을','병','정','무','기','경','신','임','계'];
+const STH = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+const BR  = ['자','축','인','묘','진','사','오','미','신','유','술','해'];
+const BRH = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+const ZODIAC = ['쥐','소','호랑이','토끼','용','뱀','말','양','원숭이','닭','개','돼지'];
+const SE = [0,0,1,1,2,2,3,3,4,4];              // 천간 오행 (0목 1화 2토 3금 4수)
+const BE = [4,2,0,0,2,1,1,2,3,3,2,4];          // 지지 오행(본기)
+const EL = ['목(木)','화(火)','토(土)','금(金)','수(水)'];
+
+const mod = (n,m)=>((n%m)+m)%m;
+const pkey = (x,y)=> Math.min(x,y)+','+Math.max(x,y);
+const pset = arr => new Set(arr.map(p=>pkey(p[0],p[1])));
+const YUKHAP = pset([[0,1],[2,11],[3,10],[4,9],[5,8],[6,7]]);
+const WONJIN = pset([[0,7],[1,6],[2,9],[3,8],[4,11],[5,10]]);
+const HAE    = pset([[0,7],[1,6],[2,5],[3,4],[8,11],[9,10]]);
+const HYUNG  = pset([[2,5],[5,8],[2,8],[1,10],[7,10],[1,7],[0,3]]);
+
+/* ===================== 달력/천문 ===================== */
+function jdnOf(y,m,d){ // 그레고리력 → 율리우스일수(정오 기준 정수)
+  const a=Math.floor((14-m)/12), yy=y+4800-a, mm=m+12*a-3;
+  return d + Math.floor((153*mm+2)/5) + 365*yy + Math.floor(yy/4) - Math.floor(yy/100) + Math.floor(yy/400) - 32045;
+}
+function fromJdn(j){
+  const a=j+32044, b=Math.floor((4*a+3)/146097), c=a-Math.floor(146097*b/4);
+  const d=Math.floor((4*c+3)/1461), e=c-Math.floor(1461*d/4), m=Math.floor((5*e+2)/153);
+  return { d: e-Math.floor((153*m+2)/5)+1, m: m+3-12*Math.floor(m/10), y: 100*b+d-4800+Math.floor(m/10) };
+}
+const WEEKDAY = ['월','화','수','목','금','토','일'];
+
+function sunLongitude(jd){ // 태양 시황경(도), 저정밀 근사 (±0.01°)
+  const n = jd - 2451545.0;
+  const L = mod(280.460 + 0.9856474*n, 360);
+  const g = mod(357.528 + 0.9856003*n, 360) * Math.PI/180;
+  return mod(L + 1.915*Math.sin(g) + 0.020*Math.sin(2*g), 360);
+}
+// 절기 12절: [황경, 대략 월, 대략 일, 해당 월지]
+const TERM_DEFS = [
+  [285, 1, 6, 1],  // 소한 → 축월
+  [315, 2, 4, 2],  // 입춘 → 인월
+  [345, 3, 6, 3],  // 경칩 → 묘월
+  [ 15, 4, 5, 4],  // 청명 → 진월
+  [ 45, 5, 6, 5],  // 입하 → 사월
+  [ 75, 6, 6, 6],  // 망종 → 오월
+  [105, 7, 7, 7],  // 소서 → 미월
+  [135, 8, 8, 8],  // 입추 → 신월
+  [165, 9, 8, 9],  // 백로 → 유월
+  [195,10, 8,10],  // 한로 → 술월
+  [225,11, 7,11],  // 입동 → 해월
+  [255,12, 7, 0],  // 대설 → 자월
+];
+function solveTerm(y, angle, gm, gd){ // 황경=angle 이 되는 JD(UT)를 이분법으로 탐색
+  let lo = jdnOf(y,gm,gd) - 0.5 - 7, hi = lo + 14;
+  const f = jd => mod(sunLongitude(jd) - angle + 540, 360) - 180;
+  const sLo = f(lo) < 0;
+  for(let i=0;i<50;i++){
+    const mid=(lo+hi)/2;
+    if((f(mid)<0)===sLo) lo=mid; else hi=mid;
+  }
+  return (lo+hi)/2;
+}
+const _termCache = new Map();
+function termsOfYear(y){
+  if(_termCache.has(y)) return _termCache.get(y);
+  const arr = TERM_DEFS.map(t=>({ jd: solveTerm(y,t[0],t[1],t[2]), br: t[3], angle: t[0] }));
+  _termCache.set(y,arr);
+  return arr;
+}
+const _aroundCache = new Map();
+function termsAround(y){
+  if(_aroundCache.has(y)) return _aroundCache.get(y);
+  const arr = termsOfYear(y-1).concat(termsOfYear(y)).sort((a,b)=>a.jd-b.jd);
+  _aroundCache.set(y,arr);
+  return arr;
+}
+function ipchunJd(y){ return termsOfYear(y).find(t=>t.angle===315).jd; }
+
+/* ===================== 사주 기둥 계산 ===================== */
+// jdU: 출생 시각의 JD(UT).  calY: 양력 연도
+function yearMonthPillars(jdU, calY){
+  const ts = termsAround(calY);
+  let last = ts[0];
+  for(let i=ts.length-1;i>=0;i--){ if(ts[i].jd<=jdU){ last=ts[i]; break; } }
+  const sy = (jdU >= ipchunJd(calY)) ? calY : calY-1;
+  const ys = mod(sy-4,10), yb = mod(sy-4,12);
+  const mb = last.br;
+  const mIdx = mod(mb-2,12); // 인월=0 … 축월=11
+  const ms = mod((ys%5)*2 + 2 + mIdx, 10);
+  return {ys,yb,ms,mb};
+}
+function dayPillar(jdn){ const i=mod(jdn+49,60); return {ds:i%10, db:i%12}; }
+function hourBranchOf(tHours, corrected){
+  const shift = corrected ? 0.5 : 1.0;
+  return { hb: Math.floor(mod(tHours+shift,24)/2), nextDay: tHours >= 24-shift };
+}
+function hourStemOf(ds, hb){ return mod((ds%5)*2 + hb, 10); }
+
+// 하나의 완성 사주. hb=null 이면 시주 없음
+function buildChart(y,m,d,tHours,corrected,gender){
+  const j = jdnOf(y,m,d);
+  let hb=null, hs=null, dayShift=0;
+  if(tHours!=null){
+    const r = hourBranchOf(tHours, corrected);
+    hb = r.hb; dayShift = r.nextDay?1:0;
+  }
+  const t = (tHours==null)?12:tHours;
+  const jdU = (j-0.5) + t/24 - 9/24; // KST → UT
+  const ym = yearMonthPillars(jdU, y);
+  const dp = dayPillar(j+dayShift);
+  if(hb!=null) hs = hourStemOf(dp.ds, hb);
+  const c = { y,m,d, jdn:j, jdU, g:gender, hb, hs, ds:dp.ds, db:dp.db, ...ym };
+  c.ec = elemCounts(c);
+  return c;
+}
+function elemCounts(c){
+  const ec=[0,0,0,0,0];
+  [c.ys,c.ms,c.ds,c.hs].forEach(s=>{ if(s!=null) ec[SE[s]]++; });
+  [c.yb,c.mb,c.db,c.hb].forEach(b=>{ if(b!=null) ec[BE[b]]++; });
+  return ec;
+}
+
+/* ===================== 궁합 점수 ===================== */
+function branchRels(x,y){
+  const r={};
+  if(x===y){
+    if(x===4||x===6||x===9||x===11) r.jahyung=true; else r.same=true;
+    return r;
+  }
+  const k = pkey(x,y), d = Math.abs(x-y);
+  if(YUKHAP.has(k)) r.hap=true;
+  if(d===6) r.chung=true;
+  if(d===4||d===8) r.samhap = ([0,3,6,9].includes(x) || [0,3,6,9].includes(y)) ? 'strong':'weak';
+  if(WONJIN.has(k)) r.wonjin=true;
+  else if(HAE.has(k)) r.hae=true;
+  if(HYUNG.has(k)) r.hyung=true;
+  return r;
+}
+function applyBranch(label,x,y,W,add){
+  if(x==null||y==null) return;
+  const r = branchRels(x,y), pn = BR[x]+BR[y];
+  if(r.hap && W.hap) add(W.hap, label+' 육합('+pn+'합) — 서로 끌어당겨 결합하는 길연');
+  if(r.samhap && W.sam){
+    const p = r.samhap==='strong' ? W.sam : Math.max(1,Math.round(W.sam*0.6));
+    add(p, label+' 삼합('+pn+') — 뜻이 맞고 협력이 잘 되는 조합');
+  }
+  if(r.same && W.same) add(W.same, label+' 동일('+pn+') — 성향이 비슷해 편안함');
+  if(r.jahyung && W.jah) add(W.jah, label+' 자형('+pn+') — 너무 닮아 오히려 부딪힘');
+  if(r.chung && W.chung) add(W.chung, label+' 충('+pn+'충) — 정면 충돌 기운, 갈등 주의');
+  if(r.wonjin && W.won) add(W.won, label+' 원진('+pn+') — 이유 모를 미움이 쌓이기 쉬움');
+  if(r.hae && W.hae) add(W.hae, label+' 해('+pn+'해) — 은근한 방해와 서운함');
+  if(r.hyung && W.hyu) add(W.hyu, label+' 형('+pn+'형) — 마찰·시비의 기운');
+}
+/* ===================== 신강약 · 용신 분석 ===================== */
+const CUR_YEAR = new Date().getFullYear();
+const GRP_NAMES = ['비겁','식상','재성','관성','인성'];
+// 지지별 지장간 오행 집합 (통근 판정용) — 자축인묘진사오미신유술해
+const JIJANG_EL = [[4],[2,3,4],[0,1,2],[0],[2,0,4],[1,2,3],[1,2],[2,1,0],[3,4,2],[3],[2,3,1],[4,0]];
+// 궁통보감 조후 주용신표 [일간 갑을병정무기경신임계][월지 자축인묘진사오미신유술해] = 오행(0목1화2토3금4수)
+const JOHU_YONG = [
+  [1,1,1,3,3,4,4,4,3,3,3,3], // 갑
+  [1,1,1,1,4,4,4,4,1,4,4,1], // 을
+  [4,4,4,4,4,4,4,4,4,4,0,0], // 병
+  [0,0,0,3,0,0,4,0,0,0,0,0], // 정
+  [1,1,1,1,0,0,4,4,1,1,0,0], // 무
+  [1,1,1,0,1,4,4,4,1,1,0,1], // 기
+  [1,1,2,1,0,4,4,1,1,1,0,1], // 경
+  [1,1,2,4,4,4,4,4,4,4,4,4], // 신
+  [2,1,3,2,0,4,4,3,2,0,0,2], // 임
+  [1,1,3,3,1,3,3,3,1,3,3,3], // 계
+];
+const POS_W  = { ys:7, ms:10, hs:10, yb:8, mb:30, db:15, hb:10 };        // 일간 제외 (신강약 세력)
+const FULL_W = { ys:7, ms:10, ds:12, hs:10, yb:8, mb:30, db:15, hb:10 }; // 8글자 전체 (오행 비중)
+
+function analyzeChart(c){
+  const ae = SE[c.ds];
+  const gs=[0,0,0,0,0]; let total=0; // 0비겁 1식상 2재성 3관성 4인성
+  const put=(elem,w)=>{ gs[mod(elem-ae,5)]+=w; total+=w; };
+  if(c.ys!=null) put(SE[c.ys],POS_W.ys);
+  if(c.ms!=null) put(SE[c.ms],POS_W.ms);
+  if(c.hs!=null) put(SE[c.hs],POS_W.hs);
+  if(c.yb!=null) put(BE[c.yb],POS_W.yb);
+  if(c.mb!=null) put(BE[c.mb],POS_W.mb);
+  if(c.db!=null) put(BE[c.db],POS_W.db);
+  if(c.hb!=null) put(BE[c.hb],POS_W.hb);
+  const r = (gs[0]+gs[4])/total;
+  const deukryeong = c.mb!=null && (BE[c.mb]===ae || BE[c.mb]===mod(ae+4,5));
+  const verdict = r>=0.58 ? 'strong' : (r<=0.42 ? 'weak' : 'border');
+  const lean = r>=0.5 ? 'strong' : 'weak';
+  const eff = verdict==='border' ? lean : verdict;
+  const inE=mod(ae+4,5), biE=ae, sikE=mod(ae+1,5), jaeE=mod(ae+2,5), gwanE=mod(ae+3,5);
+  let eokbu, eokbuWhy;
+  if(eff==='weak'){
+    if(gs[2]>=gs[1] && gs[2]>=gs[3]){ eokbu=biE; eokbuWhy='재성 과다로 약해진 일간 — 비겁('+EL[biE]+')이 일간을 거들어 주는 구도'; }
+    else { eokbu=inE; eokbuWhy='일간이 약하므로 인성('+EL[inE]+')으로 생조하는 구도'; }
+  } else {
+    if(gs[4]>=gs[0]){ eokbu=jaeE; eokbuWhy='인성 주도의 신강 — 재성('+EL[jaeE]+')으로 과한 인성을 제어'; }
+    else { eokbu=gwanE; eokbuWhy='비겁 주도의 신강 — 관성('+EL[gwanE]+')으로 일간을 제어 (차선: 식상 '+EL[sikE]+')'; }
+  }
+  const johu = JOHU_YONG[c.ds][c.mb];
+  const hotM=(c.mb===5||c.mb===6||c.mb===7), coldM=(c.mb===11||c.mb===0||c.mb===1);
+  const johuWhy='궁통보감 기준 '+ST[c.ds]+'일간 '+BR[c.mb]+'월생의 조후 용신은 '+EL[johu]
+    +(hotM?' — 한여름이라 조후가 시급':coldM?' — 한겨울이라 조후가 시급':' — 환절기라 조후는 급하지 않아 억부와 함께 참고');
+  // 종격(從格) 가능성: 극단적 편중 사주에서는 억부 용신이 반대일 수 있으므로 경고만 (자동 전환 안 함)
+  // 통근(通根) 확인 — 지지 지장간에 일간과 같은 오행(비겁)이 있으면 뿌리가 있어 종격 아님
+  let rooted=false;
+  [c.yb,c.mb,c.db,c.hb].forEach(b=>{ if(b!=null && JIJANG_EL[b].includes(ae)) rooted=true; });
+  let jong=null;
+  if(r<=0.12 && !deukryeong && !rooted){
+    const drain=[[gs[1],sikE,'식상'],[gs[2],jaeE,'재성'],[gs[3],gwanE,'관성']].sort((a,b)=>b[0]-a[0])[0];
+    jong={ type:'weak', yong:drain[1],
+      why:'일간을 돕는 세력이 '+Math.round(r*100)+'%뿐이고 월지 지원도 없어, 억부(도와주기)가 아니라 대세인 '+drain[2]+'('+EL[drain[1]]+')를 따르는 종격(從格)일 수 있습니다' };
+  } else if(r>=0.88 && deukryeong){
+    const own = gs[4]>=gs[0] ? [inE,'인성'] : [biE,'비겁'];
+    jong={ type:'strong', yong:own[0],
+      why:'일간을 돕는 세력이 '+Math.round(r*100)+'%로 극단적이라, 억부(덜어내기)가 아니라 대세인 '+own[1]+'('+EL[own[0]]+')를 따르는 전왕(專旺)·종강(從强)일 수 있습니다' };
+  }
+  return { gs, total, r, deukryeong, verdict, lean, eokbu, eokbuWhy, johu, johuWhy, jong, ae };
+}
+function elemRatio(c, e){ // 사주 내 특정 오행의 자리 가중 비중 (0~1)
+  let hit=0, total=0;
+  const put=(elem,w)=>{ total+=w; if(elem===e) hit+=w; };
+  if(c.ys!=null) put(SE[c.ys],FULL_W.ys);
+  if(c.ms!=null) put(SE[c.ms],FULL_W.ms);
+  if(c.ds!=null) put(SE[c.ds],FULL_W.ds);
+  if(c.hs!=null) put(SE[c.hs],FULL_W.hs);
+  if(c.yb!=null) put(BE[c.yb],FULL_W.yb);
+  if(c.mb!=null) put(BE[c.mb],FULL_W.mb);
+  if(c.db!=null) put(BE[c.db],FULL_W.db);
+  if(c.hb!=null) put(BE[c.hb],FULL_W.hb);
+  return total ? hit/total : 0;
+}
+function yongScore(r){ // 용신 세력 적정 곡선: 과소 0 ~ 적정(30~45%) 20 ~ 과다 8
+  if(r<=0.10) return Math.round(r/0.10*6);
+  if(r<=0.30) return Math.round(6+(r-0.10)/0.20*14);
+  if(r<=0.45) return 20;
+  if(r<=0.65) return Math.round(20-(r-0.45)/0.20*12);
+  return 8;
+}
+
+/* ===================== 대운 · 세운 ===================== */
+function daewoonOf(c, gender){
+  const yangYear = c.ys%2===0;
+  const forward = (yangYear && gender==='M') || (!yangYear && gender==='F'); // 양남음녀 순행
+  const ts = termsAround(c.y).concat(termsOfYear(c.y+1)).slice().sort((a,b)=>a.jd-b.jd);
+  let prev=null, next=null;
+  for(const t of ts){ if(t.jd<=c.jdU) prev=t; else { next=t; break; } }
+  const days = forward ? (next.jd-c.jdU) : (c.jdU-prev.jd);
+  let su = Math.round(days/3); if(su<1) su=1; if(su>10) su=10;
+  let m60=0; for(let k=0;k<60;k++){ if(k%10===c.ms && k%12===c.mb){ m60=k; break; } }
+  const seq=[];
+  for(let i=1;i<=9;i++){
+    const idx=mod(m60+(forward?i:-i),60);
+    const sy=c.y+su+(i-1)*10;
+    seq.push({ s:idx%10, b:idx%12, startYear:sy, endYear:sy+9 });
+  }
+  return { forward, su, seq };
+}
+function timelineFor(c, gender, yong, winY0, winN){
+  const dw = daewoonOf(c, gender);
+  const Y1 = winY0+winN-1, cells=[];
+  for(const seg of dw.seq){
+    const from=Math.max(seg.startYear,winY0), to=Math.min(seg.endYear,Y1);
+    if(to<from) continue;
+    const be=BE[seg.b];
+    let wind='mid';
+    if(yong!=null){
+      if(be===yong || be===mod(yong+4,5)) wind='good';
+      else if(be===mod(yong+3,5)) wind='bad';
+    }
+    cells.push({ s:seg.s, b:seg.b, from, to, wind, chung: Math.abs(seg.b-c.db)===6 });
+  }
+  if(cells.length && cells[0].from>winY0)
+    cells.unshift({ s:null, b:null, from:winY0, to:cells[0].from-1, wind:'mid', chung:false, pre:true });
+  return { dw, cells };
+}
+function windByYear(cells, winY0, winN){
+  const arr=new Array(winN).fill('mid');
+  for(const c of cells) for(let y=c.from; y<=c.to; y++) if(y>=winY0 && y<winY0+winN) arr[y-winY0]=c.wind;
+  return arr;
+}
+function yearRanges(flagArr, winY0){ // 연속 true 구간 → "2041~2045" 목록
+  const out=[]; let s=null;
+  for(let i=0;i<=flagArr.length;i++){
+    const on = i<flagArr.length && flagArr[i];
+    if(on && s===null) s=i;
+    if(!on && s!==null){ const a=winY0+s, b=winY0+i-1; out.push(a===b?String(a):a+'~'+b); s=null; }
+  }
+  return out;
+}
+function seunSignals(P, ys, yb){ // 2층: 그 해 세운의 성사 방아쇠 강도 (배우자성 도래·배우자궁 활성·명암합)
+  const ae=SE[P.ds];
+  const spouseElem = P.g==='M' ? mod(ae+2,5) : mod(ae+3,5); // 남 재성, 여 관성
+  let n=0;
+  if(SE[ys]===spouseElem) n+=1;        // 배우자성 천간 투출 — 뚜렷한 신호
+  else if(BE[yb]===spouseElem) n+=0.5; // 지지에만 있음 — 약한 신호
+  const d=Math.abs(P.db-yb);
+  if(P.db!==yb && (YUKHAP.has(pkey(P.db,yb)) || d===4 || d===8)) n+=1;   // 배우자궁 합(결합)
+  else if(d===6) n+=0.5;                                                  // 배우자궁 충(변동 — 성사·이별 양가라 약하게)
+  if(mod(P.ds+5,10)===ys) n+=0.5;      // 일간 명암합 — 세운 천간과 합해 인연이 묶임
+  return n;
+}
+// 1층: 각 해의 지배 대운이 '결혼기'인가 — 대운 간지에 배우자성이 오거나 배우자궁을 활성화하면 세운을 증폭
+function daewoonMarriageBg(c, gender, winY0, winN){
+  const dw = daewoonOf(c, gender), ae=SE[c.ds];
+  const spouse = gender==='M' ? mod(ae+2,5) : mod(ae+3,5);
+  const bg = new Array(winN).fill(0);
+  for(const seg of dw.seq){
+    let v=0;
+    if(SE[seg.s]===spouse) v+=1;        // 대운 천간 배우자성 — 강한 결혼기 배경
+    else if(BE[seg.b]===spouse) v+=0.6; // 대운 지지 배우자성
+    if(c.db!=null){
+      const d=Math.abs(seg.b-c.db);
+      if(seg.b!==c.db && (YUKHAP.has(pkey(seg.b,c.db))||d===4||d===8)) v+=0.5; // 대운 지지가 배우자궁과 합
+      else if(d===6) v+=0.3;                                                    // 대운 지지가 배우자궁을 충
+    }
+    for(let y=Math.max(seg.startYear,winY0); y<=Math.min(seg.endYear,winY0+winN-1); y++) bg[y-winY0]=v;
+  }
+  return bg;
+}
+const RECO_WIN = 10; // 목표 미입력 시 보여줄 기본 근미래 창(년)
+function marriageYearsAll(A,B,ctx,winStart,winEnd){ // 지정 기간 중 양쪽 모두 성사 신호가 있는 해 (대운 배경 교차 검증)
+  const s=winStart==null?CUR_YEAR:winStart, e=winEnd==null?CUR_YEAR+RECO_WIN-1:winEnd;
+  const out=[];
+  for(let Y=s; Y<=e; Y++){
+    const ys=mod(Y-4,10), yb=mod(Y-4,12);
+    let na=seunSignals(A,ys,yb), nb=seunSignals(B,ys,yb);
+    if(na<0.5 || nb<0.5) continue; // 양쪽 모두 세운 방아쇠가 있어야
+    let headwind=false;
+    if(ctx){
+      if(ctx.chA.has(Y) || ctx.chB.has(Y)) continue; // 배우자궁 충 대운 구간 제외
+      const i=Y-ctx.winY0;
+      if(i>=0 && i<ctx.wa.length && (ctx.wa[i]==='bad' || ctx.wb[i]==='bad')) headwind=true;
+      // 1층: 지배 대운이 결혼기면 세운 방아쇠를 증폭 (대운은 배경, 세운은 방아쇠 — 곱셈 관계)
+      if(ctx.bgA && i>=0 && i<ctx.bgA.length){ na*=(1+0.5*ctx.bgA[i]); nb*=(1+0.5*ctx.bgB[i]); }
+    }
+    const n=na+nb;
+    if(n<2) continue; // 합산 강도 2 이상
+    out.push({Y, n, headwind});
+  }
+  return out;
+}
+function marriageYears(A,B,ctx,winStart,winEnd){
+  const all=marriageYearsAll(A,B,ctx,winStart,winEnd).slice();
+  all.sort((a,b)=>b.n-a.n || a.Y-b.Y);
+  return all.slice(0,3).sort((a,b)=>a.Y-b.Y);
+}
+function flowGrade(wa, wb, chA, chB, winY0, yongApplied){
+  // 등급 판정은 20년 창(근미래 가중), 부부궁 충 스캔은 30년 전체 — 어떤 구간의 충도 숨기지 않음
+  let bothGood=0, bothBad=0;
+  for(let i=0;i<20;i++){
+    if(wa[i]==='good' && wb[i]==='good') bothGood++;
+    if(wa[i]==='bad' && wb[i]==='bad') bothBad++;
+  }
+  let first=null;
+  for(let y=winY0; y<winY0+30; y++){ if(chA.has(y) || chB.has(y)){ first=y; break; } }
+  const near = first!=null && first < winY0+10;
+  const mid20 = first!=null && first < winY0+20;
+  const far = first!=null && first >= winY0+20;
+  let g,label,why;
+  if(near){ g='warn'; label='주의'; why='부부궁 충 대운이 '+first+'년경 시작 — 큰 결정은 신중히'; }
+  else if(bothBad>=6){ g='warn'; label='주의'; why='두 사람의 역풍 대운이 '+bothBad+'년 겹침 — 큰 결정은 신중히'; }
+  else if(!mid20 && bothBad<=2 && (!yongApplied || bothGood>=8)){
+    g='good'; label='순탄';
+    why='20년 내 부부궁 충 없음'+(yongApplied?' · 동반 순풍 '+bothGood+'년':'')+(far?' · 다만 '+first+'년경 충 (먼 미래)':'');
+  }
+  else {
+    g='mid'; label='보통';
+    why = mid20 ? '부부궁 충 대운이 '+first+'년경 시작 (10년 이후)'
+      : (yongApplied ? '동반 순풍 '+bothGood+'년 · 동반 역풍 '+bothBad+'년' : '특이 신호 없음')
+        + (far?' · '+first+'년경 충 (먼 미래)':'');
+  }
+  return {g, label, why, first, far};
+}
+
+// 상대 스타일(성격) — 궁합 점수와 별개, 일간 기질 + 최강 십성으로 서술
+const ILGAN_STYLE=['곧고 진취적인 리더형(자존심 강함)','유연하고 끈질긴 적응형(속은 단단)','밝고 열정적인 외향형(표현이 시원)','따뜻하고 세심한 감성형(배려 깊음)','듬직하고 포용력 있는 신중형','실속 있고 성실한 현실형','결단력 있고 의리 있는 강직형','깔끔하고 예민한 완벽추구형','자유롭고 지혜로운 대범형','조용하고 직관적인 사색형'];
+const SIPSUNG_STYLE=['주관·독립심이 강하고 경쟁적','표현력·재능이 풍부하고 자유분방(구속 싫어함)','현실 감각과 추진력이 좋고 활동적','책임감·절제력이 있고 원칙적(안정 추구)','사색적·수용적이고 배우기를 좋아함(신중)'];
+function styleOf(c){
+  const an=analyzeChart(c); let mi=0; for(let i=1;i<5;i++) if(an.gs[i]>an.gs[mi]) mi=i;
+  return ILGAN_STYLE[c.ds]+' · '+SIPSUNG_STYLE[mi];
+}
+const DEFAULT_W = {gan:1, ilji:1, ymji:1, ohaeng:1};
+function scorePair(A,B,W,yong,myAn){
+  W = W || DEFAULT_W;
+  const wOf = k => W[k]==null ? 1 : W[k];
+  // 이론상 최대 가점 합으로 정규화 — 만점 인플레이션 방지 (100점 = 모든 길연 요소를 갖춘 경우)
+  const maxPos = 24*wOf('gan') + 15*wOf('ilji') + 11*wOf('ymji') + (yong!=null?35:0)*wOf('ohaeng');
+  const factor = maxPos>0 ? Math.min(1, 50/maxPos) : 0;
+  let s=50; const R=[];
+  const mkAdd = cat => (p,t)=>{
+    const q = Math.round(p * wOf(cat) * factor);
+    if(q!==0){ s+=q; R.push({p:q,t}); }
+  };
+  const add=mkAdd('gan'), addIlji=mkAdd('ilji'), addYmji=mkAdd('ymji'), addOh=mkAdd('ohaeng');
+  const a=A.ds, b=B.ds, ae=SE[a], be=SE[b];
+  const oppYY = (a%2)!==(b%2), sameP = !oppYY;
+  const m2f = A.g==='M'&&B.g==='F', f2m = A.g==='F'&&B.g==='M';
+
+  // 일간 십성 관계 (정/편 완전 구분) — 관계축의 핵심
+  if(mod(a+5,10)===b) add(14, '일간 천간합('+ST[a]+ST[b]+'합) — 부부 인연의 대표 길연');
+  else if(mod(be+1,5)===ae) add(oppYY?9:5, oppYY?'정인(正印) — 상대가 나를 따뜻이 북돋아 주는 관계':'편인(偏印) — 도움은 되나 방식이 변덕스러울 수 있음');
+  else if(mod(ae+1,5)===be) add(sameP?5:3, sameP?'식신(食神) — 내가 편하게 베풀고 이끄는 관계':'상관(傷官) — 내가 이끌지만 간섭·잔소리가 될 수 있음');
+  else if(mod(ae+2,5)===be){ // 상대 = 나의 재성 (내가 극)
+    if(m2f) add(oppYY?8:4, oppYY?'정재(正財) — 전통적으로 길한 부부 배합(아내 별)':'편재(偏財) — 인연은 강하나 기복 가능');
+    else add(-3, '내 일간이 상대를 극(剋) — 주도권 갈등 소지');
+  }
+  else if(mod(be+2,5)===ae){ // 상대 = 나의 관성 (상대가 극)
+    if(f2m) add(oppYY?8:4, oppYY?'정관(正官) — 전통적으로 길한 부부 배합(남편 별)':'편관(偏官) — 강한 인연이나 긴장감 있음');
+    else add(-3, '상대 일간이 내 일간을 극(剋) — 압박감 소지');
+  }
+  else if(ae===be) add(sameP?3:1, sameP?'비견(比肩) — 친구처럼 대등한 관계':'겁재(劫財) — 대등하나 경쟁·소유 다툼 소지');
+  if(Math.abs(a-b)===6 && Math.min(a,b)<4)
+    add(-8, '일간 천간충('+ST[Math.min(a,b)]+ST[Math.max(a,b)]+'충) — 가치관 충돌 주의');
+  if(oppYY) add(3, '일간 음양이 서로 달라 보완적');
+  // 천지덕합 — 천간합 + 일지육합이 함께 이뤄진 최상급 배필(부분의 합 이상의 특별 등급)
+  if(mod(a+5,10)===b && A.db!=null && B.db!=null && YUKHAP.has(pkey(A.db,B.db)))
+    add(3, '천지덕합(天地德合) — 천간합과 일지 육합이 함께한 최상급 배필');
+  // 십성 조합(격국) — 오행 공급으로는 안 잡히는 특정 흉/길 조합. 내 천간 투출 십성 기준
+  { const hap = mod(a+5,10)===b;
+    let aSanggwan=0, aSiksin=0, aGyeopjae=0, aInsung=0;
+    [A.ys,A.ms,A.hs].forEach(st=>{ if(st==null) return;
+      const e=SE[st], samePol=(st%2)===(a%2);
+      if(e===mod(ae+1,5)){ samePol?aSiksin++:aSanggwan++; }
+      else if(e===ae){ if(!samePol) aGyeopjae++; }
+      else if(e===mod(ae+4,5)) aInsung++; });
+    const bIsGwan = mod(be+2,5)===ae;   // 상대가 나를 극 = 나의 관성
+    const bIsJae  = mod(ae+2,5)===be;   // 내가 상대를 극 = 나의 재성
+    if(f2m && bIsGwan && oppYY && aSanggwan>0){ // 상관견관 (여명) — 합이어도 상관 마찰은 남음
+      const mit=aInsung>0;
+      add(mit?-2:-5, '상관견관(傷官見官) — 내 상관이 남편별(정관)을 극함'+(mit?' (인성이 통관해 완화)':' — 부부 갈등 소지'));
+    } else if(m2f && bIsJae && oppYY && aGyeopjae>0){ // 군겁쟁재 (남명)
+      const mit=(aSiksin+aSanggwan)>0;
+      add(mit?-2:-5, '군겁쟁재(群劫爭財) — 내 겁재가 아내별(정재)을 다툼'+(mit?' (식상이 통관해 완화)':' — 재물·애정 경쟁 소지'));
+    } else if(f2m && bIsGwan && sameP && aSiksin>0){ // 식신제살 (여명, 칠살)
+      add(3, '식신제살(食神制殺) — 내 식신이 상대의 칠살(편관)을 제압해 자산으로 씀');
+    } else if(bIsGwan && !hap && aInsung>0){ // 관인상생 (비합 관성)
+      add(3, '관인상생(官印相生) — 상대(관성)의 기운이 내 인성을 거쳐 나를 길러 줌');
+    } }
+  // 배우자성(십성) 공급 — 상대 사주 전체에 내 배우자별 오행이 실린 정도 (남:재성 / 여:관성). 시기와 무관한 원국 특성
+  // 단, 그 배우자별 오행이 내 기신이면(아내별이 곧 나를 해치는 오행) 용신축에서 이미 다루므로 여기선 적용 안 함
+  { const spE = A.g==='M' ? mod(ae+2,5) : mod(ae+3,5);
+    const isGisin = (yong!=null) && spE===mod(yong+3,5);
+    if(!isGisin){
+      const spR = elemRatio(B, spE), sp = Math.round(spR*100);
+      if(spR>=0.15 && spR<=0.45) add(4, '배우자성('+EL[spE]+') 충실 — 상대 사주에 '+sp+'%로 배우자 기운이 뚜렷함');
+      else if(spR>=0.08) add(2, '배우자성('+EL[spE]+') 보유 — 상대 사주에 '+sp+'%');
+      else if(spR<0.05) add(-2, '배우자성('+EL[spE]+') 미약 — 상대 사주에 '+sp+'%뿐');
+    } }
+
+  applyBranch('일지(배우자궁)', A.db, B.db, {hap:15,sam:11,same:2,jah:-4,chung:-15,won:-9,hae:-6,hyu:-7}, addIlji);
+  applyBranch('띠(년지)',       A.yb, B.yb, {hap:6, sam:5, same:1,jah:-2,chung:-6, won:-4,hae:-3,hyu:-3}, addYmji);
+  applyBranch('월지',           A.mb, B.mb, {hap:5, sam:4, chung:-5, won:-3}, addYmji);
+
+  if(yong!=null){ // 용신 세력 기반 채점 (선택 시 오행 상보를 대체)
+    myAn = myAn || analyzeChart(A);
+    const weakMe = myAn.verdict==='weak' || (myAn.verdict==='border' && myAn.lean==='weak');
+    const yr=elemRatio(B,yong), pct=Math.round(yr*100);
+    const yp=yongScore(yr);
+    if(yp!==0) addOh(yp, '용신('+EL[yong]+') 세력 — 상대 사주 내 비중 '+pct+'%'+(pct>55?' · 과다 주의':(pct>=20?' · 유력':' · 미약')));
+    // 신약한 나를 직접 극하는 오행(관성)이 상대에게 과다하면 감점
+    const threat=mod(ae+3,5), tr=elemRatio(B,threat);
+    if(weakMe && tr>=0.35){
+      const gwanIn = yr>=0.25; // 용신(인성)이 유력하면 관인상생으로 일부 중화
+      const pen = tr>=0.5 ? (gwanIn?-8:-14) : (gwanIn?-4:-8);
+      addOh(pen, '관성('+EL[threat]+') 과다 '+Math.round(tr*100)+'% — 약한 내 일간을 직접 극함'
+        +(gwanIn?' (용신 '+EL[yong]+'이 관인상생으로 일부 중화)':''));
+    }
+    // 천간 투출 압박: 상대 천간에 내 관성 오행이 2개 이상 드러나면 세력과 별개로 감점
+    if(weakMe){
+      let tuchul=0;
+      [B.ys,B.ms,B.ds,B.hs].forEach(st=>{ if(st!=null && SE[st]===threat) tuchul++; });
+      if(tuchul>=2){
+        const gwanIn2 = yr>=0.25;
+        addOh(gwanIn2?-2:-4, '관성('+EL[threat]+') 천간 '+tuchul+'개 투출 — 겉으로 드러난 압박'
+          +(gwanIn2?' (관인상생으로 완화)':''));
+      }
+    }
+    // 희신: 원칙은 용신을 생하는 오행 — 단 신약자의 그것이 나를 극하는 관성이라면
+    // 비겁으로 대체 (억부의 인비 희용 논리)
+    let hui=mod(yong+4,5), huiWhy='용신을 생해 주는 기운을 적정하게 갖춤';
+    if(weakMe && hui===threat){ hui=ae; huiWhy='비겁 — 약한 내 일간을 거들어 주는 기운'; }
+    const hr=elemRatio(B,hui);
+    if(hr>=0.18 && hr<=0.40) addOh(Math.min(5,Math.round(hr*12)), '희신('+EL[hui]+') — '+huiWhy);
+    // 기신(용신을 극하는 오행) 과다
+    const gi=mod(yong+3,5), gr=elemRatio(B,gi);
+    if(gr>=0.40) addOh(-6, '기신('+EL[gi]+') 과다 — 용신을 극하는 기운이 강한 사주');
+    // 내게 불리한 방향의 오행 과다 감점 (신약: 설기·소모 / 신강: 가중) — 용신·희신·기신과 겹치면 제외
+    const burdens = weakMe ? [[mod(ae+1,5),'식상'],[mod(ae+2,5),'재성']] : [[mod(ae+4,5),'인성'],[ae,'비겁']];
+    for(const bu of burdens){
+      if(bu[0]===yong || bu[0]===hui || bu[0]===gi) continue;
+      const burdR=elemRatio(B,bu[0]);
+      if(burdR>=0.45) addOh(-5, bu[1]+'('+EL[bu[0]]+') 과다 '+Math.round(burdR*100)+'% — '
+        +(weakMe?'약한 내 일간의 기운을 크게 빼감':'강한 내 일간을 더욱 강하게 만듦'));
+    }
+    // 상호 보완 — 내가 상대에게도 이로운가 (결혼 궁합 지속성). 상대 용신은 억부로 자동 판정. 가중 0.5로 보조 반영
+    { const bYong = analyzeChart(B).eokbu;
+      const aToYong = elemRatio(A, bYong);
+      const mb = Math.round(yongScore(aToYong)*0.5);
+      if(mb>0) addOh(mb, '상호 보완 — 내가 상대 용신('+EL[bYong]+')을 '+Math.round(aToYong*100)+'% 공급 (서로에게 이로운 관계)');
+      const bGi = mod(bYong+3,5), aToGi = elemRatio(A, bGi);
+      if(aToGi>=0.35 && aToYong<0.15) addOh(-5, '상대에게 부담 — 내가 상대 기신('+EL[bGi]+')을 '+Math.round(aToGi*100)+'% 공급해 상대 균형을 해침');
+    }
+  }
+  // 용신 미적용 시에는 오행축을 아예 두지 않고 합충·십성 관계만으로 채점한다 (maxPos에서 ohaeng 제외)
+  s = Math.max(0, Math.min(100, Math.round(s)));
+  R.sort((u,v)=>Math.abs(v.p)-Math.abs(u.p));
+  return {s,R};
+}
+function gradeOf(s){
+  if(s>=90) return '천생연분급';
+  if(s>=80) return '매우 좋음';
+  if(s>=70) return '좋음';
+  if(s>=60) return '무난';
+  if(s>=50) return '보통';
+  return '신중';
+}
+
+/* ===================== 역검색 ===================== */
+function dayPassesFilters(A, dp, F){ // 일주 단위로 판정 가능한 조건 (하루 통째로 스킵)
+  if(!F) return true;
+  if(F.ds!=null && dp.ds!==F.ds) return false;
+  if(F.db!=null && dp.db!==F.db) return false;
+  if(F.noGanChung && Math.abs(A.ds-dp.ds)===6 && Math.min(A.ds,dp.ds)<4) return false;
+  if(A.db!=null){
+    if(F.noIljiChung && Math.abs(A.db-dp.db)===6) return false;
+    if(F.noIljiWonjin && WONJIN.has(pkey(A.db,dp.db))) return false;
+    if(F.noIljiHyungHae && (HYUNG.has(pkey(A.db,dp.db)) || HAE.has(pkey(A.db,dp.db))
+        || (A.db===dp.db && (A.db===4||A.db===6||A.db===9||A.db===11)))) return false;
+  }
+  return true;
+}
+function searchCandidates(A, y1, y2, partnerGender, F, W, yong){
+  const CAP=2000, keep=[];
+  const myAn = yong!=null ? analyzeChart(A) : null;
+  let minKeep=-1, count=0;
+  const j1=jdnOf(y1,1,1), j2=jdnOf(y2,12,31);
+  for(let j=j1;j<=j2;j++){
+    const g = fromJdn(j);
+    const dp = dayPillar(j);
+    if(!dayPassesFilters(A,dp,F)) continue;
+    for(let hb=0;hb<12;hb++){
+      const rep = hb===0 ? 0.75 : hb*2+0.5;
+      const jdU = (j-0.5) + rep/24 - 9/24;
+      const ym = yearMonthPillars(jdU, g.y);
+      if(F && F.noYearChung && Math.abs(A.yb-ym.yb)===6) continue;
+      const B = { y:g.y, m:g.m, d:g.d, jdn:j, g:partnerGender, hb, hs:hourStemOf(dp.ds,hb), ds:dp.ds, db:dp.db, ...ym };
+      B.ec = elemCounts(B);
+      if(F && F.minEl){
+        let ok=true;
+        for(let e=0;e<5;e++) if(B.ec[e]<F.minEl[e]){ ok=false; break; }
+        if(!ok) continue;
+      }
+      const s = scorePair(A,B,W,yong,myAn).s;
+      count++;
+      if(keep.length<CAP || s>minKeep){
+        keep.push({j,hb,s});
+        if(keep.length>=CAP*2){
+          keep.sort((x,y)=>y.s-x.s || x.j-y.j || x.hb-y.hb);
+          keep.length=CAP;
+          minKeep=keep[CAP-1].s;
+        }
+      }
+    }
+  }
+  keep.sort((x,y)=>y.s-x.s || x.j-y.j || x.hb-y.hb);
+  return { keep, count };
+}
+function candidateChart(entry, partnerGender, corrected){
+  const g = fromJdn(entry.j);
+  const c = buildChart(g.y, g.m, g.d, null, corrected, partnerGender);
+  // 시주를 지정 시진으로 재구성 (일주는 날짜 기준 유지)
+  c.hb = entry.hb; c.hs = hourStemOf(c.ds, entry.hb);
+  c.ec = elemCounts(c);
+  return c;
+}
+function hourLabel(hb, corrected){
+  const start = corrected ? 23.5 : 23;
+  const s = mod(start + hb*2, 24), e = mod(s+2, 24);
+  const fmt = h => String(Math.floor(h)).padStart(2,'0')+':'+String(Math.round((h%1)*60)).padStart(2,'0');
+  const range = fmt(s)+'~'+fmt(e);
+  return BR[hb]+'시('+(hb===0?'전일 ':'')+range+')';
+}
+function pillarStr(s,b){ return s==null||b==null ? '—' : ST[s]+BR[b]+'('+STH[s]+BRH[b]+')'; }
+
+/* ===================== UI ===================== */
+if(typeof document !== 'undefined'){
+(function(){
+  const $ = id => document.getElementById(id);
+  let lastResults = null; // {rows:[{rank,c,score,R}], meta}
+
+  // 상세 조건 UI 구성
+  ST.forEach((s,i)=>{ $('f-ds').insertAdjacentHTML('beforeend','<option value="'+i+'">'+s+'('+STH[i]+')</option>'); });
+  BR.forEach((b,i)=>{ $('f-db').insertAdjacentHTML('beforeend','<option value="'+i+'">'+b+'('+BRH[i]+')</option>'); });
+  EL.forEach((e,i)=>{ $('el-grid').insertAdjacentHTML('beforeend',
+    '<div><label for="min-el-'+i+'">'+e+'</label><input type="number" id="min-el-'+i+'" min="0" max="8" value="0"></div>'); });
+  const WCATS = [
+    ['gan','일간 관계(합·생극·재관)'],
+    ['ilji','배우자궁(일지) 합충'],
+    ['ymji','띠·월지 관계'],
+    ['ohaeng','용신·오행 상보'],
+  ];
+  const PRESETS = {
+    balance:{gan:100,ilji:100,ymji:100,ohaeng:100},
+    attract:{gan:150,ilji:125,ymji:100,ohaeng:75},
+    stable:{gan:75,ilji:125,ymji:75,ohaeng:150},
+    intimacy:{gan:75,ilji:150,ymji:50,ohaeng:100},
+  };
+  const PRESET_KO = {balance:'균형',attract:'성사·끌림',stable:'해로·안정',intimacy:'속궁합'};
+  let curPreset = 'balance';
+  WCATS.forEach(([k,label])=>{
+    $('w-rows').insertAdjacentHTML('beforeend',
+      '<div class="w-row"><span class="wl">'+label+'</span><input type="range" id="w-'+k+'" min="50" max="150" step="25" value="100"><b id="wv-'+k+'">100%</b></div>');
+    $('w-'+k).addEventListener('input', e=>{
+      $('wv-'+k).textContent = e.target.value+'%';
+      curPreset = null; // 수동 조정 시 프리셋 해제
+      document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+    });
+  });
+  document.querySelectorAll('.preset-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const p = btn.dataset.preset;
+      curPreset = p;
+      document.querySelectorAll('.preset-btn').forEach(b=>b.classList.toggle('active', b===btn));
+      WCATS.forEach(([k])=>{ $('w-'+k).value = PRESETS[p][k]; $('wv-'+k).textContent = PRESETS[p][k]+'%'; });
+    });
+  });
+  $('t-from').min = $('t-to').min = CUR_YEAR-30; // 과거 복기 허용
+  $('t-from').max = $('t-to').max = CUR_YEAR+29;
+  $('t-from').placeholder = '예: '+(CUR_YEAR+1)+' / 과거도 가능';
+  $('t-to').placeholder = '예: '+(CUR_YEAR+3);
+
+  let curAnalysis=null, curKey=null;
+
+  // 내 정보가 바뀌면 이전 사람의 분석·결과를 즉시 무효화 (혼동 방지)
+  function invalidateMy(){
+    curKey=null; curAnalysis=null; lastResults=null;
+    $('my-analysis-wrap').hidden=true;
+    $('reco-card').hidden=true;
+    $('results-card').hidden=true;
+  }
+  $('time-unknown').addEventListener('change', e=>{ $('birth-time').disabled = e.target.checked; invalidateMy(); });
+  $('birth-time').addEventListener('change', invalidateMy);
+  $('tz-mode').addEventListener('change', invalidateMy);
+  document.querySelectorAll('input[name=my-gender]').forEach(r=>r.addEventListener('change', invalidateMy));
+  $('birth-date').addEventListener('change', e=>{
+    invalidateMy();
+    const y = new Date(e.target.value+'T00:00').getFullYear();
+    if(!isNaN(y)){ $('year-from').value = y-8; $('year-to').value = y+8; } // 항상 새 생일 기준으로 갱신
+  });
+  $('reset-cond-btn').addEventListener('click', ()=>{
+    $('f-ds').value=''; $('f-db').value='';
+    for(let i=0;i<5;i++) $('min-el-'+i).value=0;
+    ['x-ilji-chung','x-ilji-wonjin','x-ilji-hyunghae','x-year-chung','x-gan-chung'].forEach(id=>{ $(id).checked=false; });
+    curPreset='balance';
+    document.querySelectorAll('.preset-btn').forEach(b=>b.classList.toggle('active', b.dataset.preset==='balance'));
+    WCATS.forEach(([k])=>{ $('w-'+k).value=100; $('wv-'+k).textContent='100%'; });
+    $('t-from').value=''; $('t-to').value='';
+    $('top-n').value='30';
+    const bd=$('birth-date').value;
+    if(bd){ const y=parseInt(bd.slice(0,4),10); $('year-from').value=y-8; $('year-to').value=y+8; }
+  });
+  function readMyInputs(){
+    const bd = $('birth-date').value;
+    if(!bd){ alert('생년월일을 입력해 주세요.'); return null; }
+    const [by,bm,bday] = bd.split('-').map(Number);
+    const unknown = $('time-unknown').checked;
+    let tHours = null;
+    if(!unknown){
+      const tv = $('birth-time').value || '12:00';
+      const [hh,mi] = tv.split(':').map(Number);
+      tHours = hh + mi/60;
+    }
+    const corrected = $('tz-mode').value==='corrected';
+    const myG = document.querySelector('input[name=my-gender]:checked').value;
+    return { by,bm,bday,tHours,unknown,corrected,myG,
+      key:[bd, unknown?'x':tHours, corrected, myG].join('|') };
+  }
+  function doAnalysis(){
+    const inp = readMyInputs();
+    if(!inp) return null;
+    const A = buildChart(inp.by,inp.bm,inp.bday,inp.tHours,inp.corrected,inp.myG);
+    renderMyChart(A, inp.unknown, inp.corrected);
+    if(inp.key!==curKey){
+      curAnalysis = analyzeChart(A);
+      curKey = inp.key;
+      renderAnalysis(A, curAnalysis);
+    }
+    return { inp, A };
+  }
+  function selectedYong(){
+    const v = document.querySelector('input[name=yong-pick]:checked');
+    if(!v || !curAnalysis) return null;
+    if(v.value==='eokbu') return curAnalysis.eokbu;
+    if(v.value==='johu') return curAnalysis.johu;
+    if(v.value==='jong') return curAnalysis.jong ? curAnalysis.jong.yong : curAnalysis.eokbu;
+    if(v.value==='manual') return parseInt($('yong-manual').value,10);
+    return null; // 용신 미적용
+  }
+  function renderAnalysis(A, an){
+    const pct = Math.round(an.r*100);
+    const vLabel = an.verdict==='strong' ? '신강(身強)'
+      : an.verdict==='weak' ? '신약(身弱)'
+      : '중화 부근 · 경계 — '+(an.lean==='strong'?'신강':'신약')+' 쪽으로 기움 (유파에 따라 판단이 갈릴 수 있음)';
+    const gsPct = an.gs.map(v=>Math.round(v/an.total*100));
+    let html = '<p class="an-verdict">신강약 판정: '+vLabel+'</p>';
+    html += '<p class="an-why">'
+      + '· 월지 '+BR[A.mb]+'('+EL[BE[A.mb]]+') — '+(an.deukryeong?'일간을 돕는 계절에 태어남(득령)':'일간을 돕지 않는 계절에 태어남(실령)')+'<br>'
+      + '· 나를 돕는 세력(비겁+인성) '+pct+'% vs 힘을 빼는 세력(식상+재성+관성) '+(100-pct)+'%<br>'
+      + '· 세력 분포: '+GRP_NAMES.map((n,i)=>n+' '+gsPct[i]+'%').join(' · ')
+      + (A.hb==null?'<br>· 시간 모름 — 6글자 기준이라 판정 신뢰도가 다소 낮습니다':'')
+      + '</p>';
+    html += '<div class="an-boxes">'
+      + '<div class="an-box"><h3>억부(抑扶) 관점</h3>용신: <strong>'+EL[an.eokbu]+'</strong><br>'+an.eokbuWhy+'</div>'
+      + '<div class="an-box"><h3>조후(調候) 관점</h3>'+(an.johu!=null?'용신: <strong>'+EL[an.johu]+'</strong><br>':'')+an.johuWhy+'</div>'
+      + '</div>';
+    if(an.jong){
+      html += '<div class="an-agree an-jong">⚠ 종격(從格) 가능성 — '+an.jong.why+'.'
+        + ' 이 경우 억부 용신('+EL[an.eokbu]+')이 오히려 해롭고, 대세를 따르는 <strong>'+EL[an.jong.yong]+'</strong>가 용신일 수 있습니다.'
+        + ' 종격 여부는 유파마다 판단이 갈리는 영역이니, 아래에서 직접 확인·선택하세요.</div>';
+    }
+    if(an.johu===an.eokbu) html += '<div class="an-agree">억부·조후 두 관점이 <strong>'+EL[an.eokbu]+'</strong>로 일치합니다 — 신뢰도가 높습니다.</div>';
+    else {
+      const extreme = [5,6,7,11,0,1].includes(A.mb);
+      html += '<div class="an-agree an-disagree">두 관점이 갈립니다 (억부: '+EL[an.eokbu]+' / 조후: '+EL[an.johu]+') — '
+        +(extreme?'한여름·한겨울이라 조후를 무겁게 볼 수 있습니다.':'환절기라 억부를 기본으로 두길 권합니다.')+' 아래에서 선택하세요.</div>';
+    }
+    html += '<div class="yong-pick">'
+      + '<label><input type="radio" name="yong-pick" value="eokbu" checked>억부 용신 적용: '+EL[an.eokbu]+'</label>'
+      + (an.johu!=null?'<label><input type="radio" name="yong-pick" value="johu">조후 용신 적용: '+EL[an.johu]+'</label>':'')
+      + (an.jong?'<label><input type="radio" name="yong-pick" value="jong">종격 용신 적용: '+EL[an.jong.yong]+' (대세 추종)</label>':'')
+      + '<label><input type="radio" name="yong-pick" value="manual">직접 선택:'
+      + '<select id="yong-manual">'+EL.map((e,i)=>'<option value="'+i+'">'+e+'</option>').join('')+'</select></label>'
+      + '<label><input type="radio" name="yong-pick" value="none">용신·오행 미적용 — 합충·십성 관계만으로 채점</label>'
+      + '</div>'
+      + '<p class="note">선택한 용신이 아래 검색의 점수 계산에 반영됩니다. 잘 모르겠으면 추천값(억부)을 그대로 두세요.</p>';
+    $('my-analysis').innerHTML = html;
+  }
+  $('analyze-btn').addEventListener('click', ()=>{
+    if(doAnalysis()) $('my-analysis-wrap').scrollIntoView({behavior:'smooth', block:'nearest'});
+  });
+
+  $('search-btn').addEventListener('click', ()=>{
+    const done = doAnalysis();
+    if(!done) return;
+    const { inp, A } = done;
+    const corrected = inp.corrected, myG = inp.myG, by = inp.by;
+    const ptG = myG==='M' ? 'F' : 'M'; // 상대 성별은 이성으로 자동
+    const y1 = parseInt($('year-from').value,10), y2 = parseInt($('year-to').value,10);
+    if(!y1 || !y2 || y1>y2){ alert('상대 출생년도 범위를 확인해 주세요.'); return; }
+    if(y1<1905 || y2>2049){ alert('출생년도는 1905~2049년 범위에서 검색할 수 있습니다.'); return; }
+    if(y2-y1+1 > 40){ alert('검색 범위는 최대 40년까지 지원합니다.'); return; }
+
+    // 상세 조건 수집
+    const F = {
+      ds: $('f-ds').value===''?null:parseInt($('f-ds').value,10),
+      db: $('f-db').value===''?null:parseInt($('f-db').value,10),
+      minEl: [0,1,2,3,4].map(i=>parseInt($('min-el-'+i).value,10)||0),
+      noIljiChung: $('x-ilji-chung').checked,
+      noIljiWonjin: $('x-ilji-wonjin').checked,
+      noIljiHyungHae: $('x-ilji-hyunghae').checked,
+      noYearChung: $('x-year-chung').checked,
+      noGanChung: $('x-gan-chung').checked,
+    };
+    if(F.ds!=null && F.db!=null && (F.ds%2)!==(F.db%2)){
+      alert('일간 '+ST[F.ds]+' + 일지 '+BR[F.db]+' 조합은 60갑자에 존재하지 않습니다.\n천간과 지지의 음양이 같아야 합니다 (예: 계묘 O, 계인 X).');
+      return;
+    }
+    const W = {};
+    WCATS.forEach(([k])=>{ W[k] = parseInt($('w-'+k).value,10)/100; });
+    const yong = selectedYong();
+    let target = null;
+    const tf = parseInt($('t-from').value,10), tt = parseInt($('t-to').value,10);
+    if(!isNaN(tf) || !isNaN(tt)){
+      const a = isNaN(tf)?tt:tf, b = isNaN(tt)?tf:tt;
+      target = [Math.max(Math.min(a,b),CUR_YEAR-30), Math.min(Math.max(a,b),CUR_YEAR+29)];
+      if(target[0]>target[1]) target = null;
+    }
+
+    const btn=$('search-btn');
+    btn.disabled=true;
+    $('status').textContent='탐색 중…';
+    setTimeout(()=>{
+      const t0=performance.now();
+      const {keep,count} = searchCandidates(A,y1,y2,ptG,F,W,yong);
+      const elapsed=((performance.now()-t0)/1000).toFixed(1);
+
+      const fParts=[];
+      if(F.ds!=null||F.db!=null) fParts.push('일주 지정');
+      if(F.minEl.some(x=>x>0)) fParts.push('오행 최소 개수');
+      if(F.noIljiChung||F.noIljiWonjin||F.noIljiHyungHae||F.noYearChung||F.noGanChung) fParts.push('배제 조건');
+      if(curPreset && curPreset!=='balance') fParts.push('프리셋: '+PRESET_KO[curPreset]);
+      else if(WCATS.some(([k])=>W[k]!==1)) fParts.push('가중치 조정');
+      flowMode = 'all'; signalMode = 'all'; rawOpen = false;
+      lastResults = {keep, y1, y2,
+        corrected, myYear:by, count, fDesc:fParts.join(' · '), A, myG, ptG, yong, target, elapsed, W};
+      renderResults(lastResults);
+      $('reco-card').scrollIntoView({behavior:'smooth'});
+      btn.disabled=false;
+      $('status').textContent='';
+    }, 30);
+  });
+
+  // ===== 1:1 궁합 조회 =====
+  function currentConfig(){
+    const yong=selectedYong();
+    const W={}; WCATS.forEach(([k])=>{ W[k]=parseInt($('w-'+k).value,10)/100; });
+    let target=null; const tf=parseInt($('t-from').value,10), tt=parseInt($('t-to').value,10);
+    if(!isNaN(tf)||!isNaN(tt)){ const a=isNaN(tf)?tt:tf,b=isNaN(tt)?tf:tt; target=[Math.max(Math.min(a,b),CUR_YEAR-30),Math.min(Math.max(a,b),CUR_YEAR+29)]; if(target[0]>target[1])target=null; }
+    return {yong,W,target};
+  }
+  $('p1-btn').addEventListener('click', ()=>{
+    const done=doAnalysis();
+    if(!done) return;
+    const A=done.A, myG=done.inp.myG, corrected=done.inp.corrected;
+    const bd=$('p1-date').value;
+    if(!bd){ alert('상대 생년월일을 입력해 주세요.'); return; }
+    const [py,pm,pd]=bd.split('-').map(Number);
+    const unknown=$('p1-unknown').checked;
+    const ptG = myG==='M'?'F':'M';
+    const {yong,W,target}=currentConfig();
+
+    let B, score, R, mn=null, mx=null;
+    if(unknown){
+      B=buildChart(py,pm,pd,null,corrected,ptG);
+      const hs=[]; let sum=0; mn=Infinity; mx=-Infinity;
+      for(let hb=0;hb<12;hb++){ const rep=hb===0?0.75:hb*2+0.5; const sp=scorePair(A,buildChart(py,pm,pd,rep,corrected,ptG),W,yong); hs.push(sp); sum+=sp.s; if(sp.s<mn)mn=sp.s; if(sp.s>mx)mx=sp.s; }
+      score=Math.round(sum/12);
+      let bd2=Infinity; for(const sp of hs){ const dd=Math.abs(sp.s-score); if(dd<bd2){ bd2=dd; R=sp.R; } }
+    } else {
+      const tv=$('p1-time').value||'12:00'; const [hh,mi]=tv.split(':').map(Number);
+      B=buildChart(py,pm,pd,hh+mi/60,corrected,ptG);
+      const s=scorePair(A,B,W,yong); score=s.s; R=s.R;
+    }
+
+    const res={A,myG,ptG,yong,target,corrected,myYear:A.y};
+    const an=analyzeChart(B);
+    let li=''; for(const it of R){ li+='<li><span class="'+(it.p>=0?'plus':'minus')+'">'+(it.p>=0?'+':'')+it.p+'</span> '+it.t+'</li>'; }
+    let chips=''; for(let e=0;e<5;e++) chips+='<span class="chip e'+e+'">'+EL[e]+' '+B.ec[e]+'</span>';
+    const vlab = an.verdict==='strong'?'신강':an.verdict==='weak'?'신약':'중화 부근';
+    const dateStr=py+'-'+String(pm).padStart(2,'0')+'-'+String(pd).padStart(2,'0');
+    const html=''
+      +'<div class="result-item" style="margin-top:14px;">'
+      +'<div class="pgrid">'+tileCol('시주',B.hs,B.hb)+tileCol('일주',B.ds,B.db)+tileCol('월주',B.ms,B.mb)+tileCol('년주',B.ys,B.yb)+'</div>'
+      +'<p class="note" style="margin-top:8px;">'+dateStr+' · 일간 '+ST[B.ds]+'('+EL[SE[B.ds]]+') · '+ZODIAC[B.yb]+'띠 · '+vlab+'('+Math.round(an.r*100)+'%) · 억부용신 '+EL[an.eokbu]+(unknown?' · 시간 모름(6글자)':'')+'</p>'
+      +'<div class="chips">'+chips+'</div>'
+      +'<div class="result-top" style="margin-top:12px;"><span class="rdate">궁합 점수</span><span class="score">'+score+'점</span><span class="grade">'+gradeOf(score)+'</span>'+(unknown?'<span class="rhour">시간 모름 · 시진별 '+mn+'~'+mx+'</span>':'')+'</div>'
+      +'<div class="reco-style" style="margin-top:6px;"><b>상대 스타일</b> — '+styleOf(B)+'</div>'
+      +'<details open style="margin-top:8px;"><summary>점수 근거 ('+R.length+'항목)</summary><ul>'+li+'</ul></details>'
+      +tlDataFor(res,B).html
+      +'</div>';
+    $('p1-out').innerHTML=html;
+    $('p1-out').scrollIntoView({behavior:'smooth', block:'nearest'});
+  });
+
+  // 오행 배경색 네모 (추천 Top5 전용) — □□일주
+  function iljuSquares(ds,db){
+    return '<span class="sq t'+SE[ds]+'" title="일간 '+ST[ds]+'('+EL[SE[ds]]+')">'+ST[ds]+'</span>'
+      +'<span class="sq t'+BE[db]+'" title="일지 '+BR[db]+'('+EL[BE[db]]+')">'+BR[db]+'</span> 일주';
+  }
+  // 만세력 타일 1기둥 (천간 위 / 지지 아래)
+  function tileCol(label,s,b){
+    const st = s==null ? '<div class="tile empty">—</div>'
+      : '<div class="tile t'+SE[s]+'" title="'+label+' 천간 '+ST[s]+'('+EL[SE[s]]+')">'+ST[s]+'</div>';
+    const br = b==null ? '<div class="tile empty">—</div>'
+      : '<div class="tile t'+BE[b]+'" title="'+label+' 지지 '+BR[b]+'('+EL[BE[b]]+')">'+BR[b]+'</div>';
+    return '<div class="pcol"><span class="plabel">'+label+'</span>'+st+br+'</div>';
+  }
+  function renderMyChart(A, unknown, corrected){
+    $('my-analysis-wrap').hidden=false;
+    let html='<div class="pgrid">'
+      + tileCol('시주',A.hs,A.hb) + tileCol('일주',A.ds,A.db)
+      + tileCol('월주',A.ms,A.mb) + tileCol('년주',A.ys,A.yb) + '</div>';
+    html+='<p class="note" style="margin-top:8px;">일간 '+ST[A.ds]+'('+STH[A.ds]+', '+EL[SE[A.ds]]+') · '+ZODIAC[A.yb]+'띠'
+      +(A.hb!=null?' · '+hourLabel(A.hb,corrected):' · 시간 모름(시주 제외)')+'</p>';
+    html+='<div class="chips">';
+    for(let e=0;e<5;e++) html+='<span class="chip e'+e+'">'+EL[e]+' '+A.ec[e]+'</span>';
+    html+='</div>';
+    if(unknown) html+='<p class="note">※ 시간 모름: 시주를 제외한 6글자로 계산합니다. 정확도가 다소 낮아집니다.</p>';
+    $('my-chart').innerHTML=html;
+  }
+
+  function tlCellsHtml(cells){
+    return cells.map(cl=>{
+      const yrs = cl.to-cl.from+1;
+      const name = cl.pre ? '대운 전' : ST[cl.s]+BR[cl.b];
+      const tag = cl.wind==='good' ? ' 순' : (cl.wind==='bad' ? ' 역' : '');
+      const warn = cl.chung ? '<span class="tl-warn" title="배우자궁(일지) 충 구간">⚠</span>' : '';
+      const title = (cl.pre?'첫 대운 이전':name+' 대운')+' '+cl.from+'~'+cl.to
+        + (cl.wind==='good'?' · 순풍(용신을 돕는 운)':cl.wind==='bad'?' · 역풍(용신을 극하는 운)':'')
+        + (cl.chung?' · 배우자궁 충 주의':'');
+      return '<div class="tl-cell tl-'+cl.wind+'" style="flex-grow:'+yrs+'" title="'+title+'">'
+        + name+warn+'<small>\''+String(cl.from%100).padStart(2,'0')+'~'+tag+'</small></div>';
+    }).join('');
+  }
+  function tlDataFor(res, c){
+    const winY0=CUR_YEAR, winN=30;
+    const myYong = res.yong;
+    const bYong = myYong==null ? null : analyzeChart(c).eokbu;
+    const tlA = timelineFor(res.A, res.myG, myYong, winY0, winN);
+    const tlB = timelineFor(c, res.ptG, bYong, winY0, winN);
+    const wa=windByYear(tlA.cells,winY0,winN), wb=windByYear(tlB.cells,winY0,winN);
+    const chA=new Set(), chB=new Set();
+    tlA.cells.forEach(x=>{ if(x.chung) for(let y=x.from;y<=x.to;y++) chA.add(y); });
+    tlB.cells.forEach(x=>{ if(x.chung) for(let y=x.from;y<=x.to;y++) chB.add(y); });
+    // 세운 창: 목표 시기를 입력하면 그 구간(과거 복기 포함), 아니면 기본 근미래(RECO_WIN년)
+    const wS = res.target ? res.target[0] : CUR_YEAR;
+    const wE = res.target ? res.target[1] : CUR_YEAR+RECO_WIN-1;
+    // 세운용 대운 배열은 목표 구간(과거일 수도)까지 덮도록 별도 창으로 계산
+    const sLo=Math.min(winY0,wS), sHi=Math.max(winY0+winN-1,wE), sN=sHi-sLo+1;
+    const stlA=timelineFor(res.A,res.myG,myYong,sLo,sN), stlB=timelineFor(c,res.ptG,bYong,sLo,sN);
+    const swa=windByYear(stlA.cells,sLo,sN), swb=windByYear(stlB.cells,sLo,sN);
+    const schA=new Set(), schB=new Set();
+    stlA.cells.forEach(x=>{ if(x.chung) for(let y=x.from;y<=x.to;y++) schA.add(y); });
+    stlB.cells.forEach(x=>{ if(x.chung) for(let y=x.from;y<=x.to;y++) schB.add(y); });
+    const sbgA=daewoonMarriageBg(res.A,res.myG,sLo,sN), sbgB=daewoonMarriageBg(c,res.ptG,sLo,sN);
+    const years = marriageYearsAll(res.A, c, {winY0:sLo, wa:swa, wb:swb, chA:schA, chB:schB, bgA:sbgA, bgB:sbgB}, wS, wE);
+    const chAll = new Set([...chA, ...chB]);
+    const flow = flowGrade(wa, wb, chA, chB, winY0, res.yong!=null);
+    const parts=[];
+    if(myYong!=null){
+      let both=0; const bothBad=[];
+      for(let i=0;i<winN;i++){ if(wa[i]==='good'&&wb[i]==='good') both++; bothBad.push(wa[i]==='bad'&&wb[i]==='bad'); }
+      const bb=yearRanges(bothBad,winY0);
+      parts.push('두 사람 모두 순풍 '+both+'년');
+      parts.push('동반 역풍 '+(bb.length?bb.join(', '):'없음'));
+    }
+    const chAr=tlA.cells.filter(x=>x.chung).map(x=>x.from+'~'+x.to);
+    const chBr=tlB.cells.filter(x=>x.chung).map(x=>x.from+'~'+x.to);
+    parts.push('배우자궁 충 구간 — 나: '+(chAr.length?chAr.join(', '):'없음')+' / 상대: '+(chBr.length?chBr.join(', '):'없음'));
+    // 구간 내 유리한 해를 연도순으로 모두 표시(과다하면 상한 12), 강한 순 ★
+    const CAP=12;
+    const chrono = years.slice().sort((a,b)=>a.Y-b.Y);
+    const shown = chrono.slice(0,CAP);
+    const winLabel = res.target ? (res.target[0]+'~'+res.target[1]) : (wS+'~'+wE);
+    const badge = chrono.length
+      ? '성사에 유리한 해(세운, '+chrono.length+'개): '+shown.map(m=>'<b>'+m.Y+'</b>'+((m.n>=3.2&&!m.headwind)?'★':'')+(m.headwind?' <small>(대운 역풍기)</small>':'')).join(' · ')+(chrono.length>CAP?' 외 '+(chrono.length-CAP)+'개':'')
+      : winLabel+' 중 두 사람 모두에게 신호가 있는 해가 없습니다';
+    const legend = '<div class="tl-legend">'
+      + (myYong!=null ? '<span class="lg lg-good">■ 순풍(용신을 돕는 대운)</span><span class="lg lg-bad">■ 역풍(용신을 극하는 대운)</span><span class="lg">□ 중립</span>' : '')
+      + '<span class="lg">⚠ 배우자궁 충</span></div>';
+    const html = '<details><summary>장기 흐름 · 시기 보기 (대운/세운)</summary><div class="tl">'
+      + '<div class="tl-row"><span class="tl-name">나</span><div class="tl-band">'+tlCellsHtml(tlA.cells)+'</div></div>'
+      + '<div class="tl-row"><span class="tl-name">상대</span><div class="tl-band">'+tlCellsHtml(tlB.cells)+'</div></div>'
+      + legend
+      + '<p class="tl-sum">'+parts.join(' · ')+'</p>'
+      + '<p class="tl-badge">'+badge+'</p>'
+      + '<p class="note">'+CUR_YEAR+'년부터 30년 창.'
+      + (myYong!=null?' 순풍/역풍은 각자의 용신 기준(나: 선택값 / 상대: 자동 억부 판단).':'')
+      + ' 세운 계산 구간: '+winLabel+(res.target?' (목표 시기)':' (기본 근미래)')+'. 방아쇠(2층)=배우자성 도래(천간1·지지0.5)+배우자궁 합1·충0.5+일간 명암합0.5, 여기에 지배 대운이 결혼기면(1층) 증폭. ★=합산 강도 3.2+. 양쪽 모두 방아쇠 있고 합산 2+ 인 해만, 배우자궁 충 대운의 해는 제외.'
+      + ' 대운 지지의 오행과 충 여부만 보는 보수적 계산이며, 점수에는 포함되지 않습니다.'
+      + ' 흐름 등급(20년 창): 주의=부부궁 충이 10년 내 시작 또는 동반 역풍 6년 이상 / 순탄=충 없음·동반 역풍 2년 이하'+(myYong!=null?'·동반 순풍 8년 이상':'')+'.</p>'
+      + '</div></details>';
+    return { html, years, chAll, flow };
+  }
+  function timingBest(years, t){
+    let best=0;
+    for(const y of years){
+      if(y.Y>=t[0] && y.Y<=t[1]){ const eff = y.headwind ? y.n-1 : y.n; if(eff>best) best=eff; }
+    }
+    return best;
+  }
+  function tgtLabelOf(tBest, tChung, tSpan){
+    if(tBest>=3.2) return '★ 매우 유리';   // 상위 ~10% 강도
+    if(tBest>=2.5) return '유리';           // 중앙값 이상
+    if(tBest>=1) return '약한 신호';
+    if(tChung>=tSpan && tSpan>0) return '✕ 부부궁 충 구간';
+    if(tChung>0) return '신호 없음 · 일부 충 구간';
+    return '신호 없음';
+  }
+  function flowBadgeHtml(flow){
+    return '<span class="flow-badge flow-'+flow.g+'" title="'+flow.why+'">흐름: '+flow.label
+      +(flow.first!=null ? ' · 충 '+flow.first+'~'+(flow.far?' (먼 미래)':'') : '')+'</span>';
+  }
+  function buildReco(res){
+    // 범위 내 모든 날짜(시주 제외)를 채점해 일주별 평균으로 집계 — 평균 = "이 일주가 보통 나와 맞는 정도"
+    // (일주가 고정하는 합충·십성은 평균에 그대로 반영되고, 사람마다 다른 오행 변동은 평균으로 상쇄됨)
+    const j1=jdnOf(res.y1,1,1), j2=jdnOf(res.y2,12,31);
+    const byIlju=new Map(); const all=[]; const flat=[];
+    for(let j=j1;j<=j2;j++){
+      const g=fromJdn(j);
+      const c=buildChart(g.y,g.m,g.d,null,res.corrected,res.ptG); // rep 차트(시 무관: 스타일·근거·목표)
+      let sum=0, dmn=Infinity, dmx=-Infinity; // 그 날짜의 12시진 평균/최저/최고
+      for(let hb=0;hb<12;hb++){ const rep=hb===0?0.75:hb*2+0.5; const s=scorePair(res.A,buildChart(g.y,g.m,g.d,rep,res.corrected,res.ptG),res.W,res.yong).s; sum+=s; if(s<dmn)dmn=s; if(s>dmx)dmx=s; }
+      const dAvg=Math.round(sum/12);
+      flat.push({j,c,avg:dAvg,mn:dmn,mx:dmx,tl:null});
+      const ik=c.ds+'-'+c.db;
+      if(!byIlju.has(ik)) byIlju.set(ik,{ik,ds:c.ds,db:c.db,items:[]});
+      byIlju.get(ik).items.push({j,c,s:dAvg});
+      all.push({j,s:dAvg});
+    }
+    flat.sort((a,b)=>b.avg-a.avg || a.j-b.j); // 전체 목록용 — 평균(표시값) 순 정렬
+    res.allDates = flat;
+    all.sort((a,b)=>b.s-a.s);
+    const top100=new Set(all.slice(0,100).map(x=>x.j));
+    const groups=[...byIlju.values()].map(g=>{
+      const ss=g.items.map(x=>x.s);
+      g.avg=Math.round(ss.reduce((a,b)=>a+b,0)/ss.length);
+      g.mn=Math.min(...ss); g.mx=Math.max(...ss);
+      const best=g.items.reduce((a,b)=>b.s>a.s?b:a); g.rep=best.c; g.repScore=best.s;
+      g.count=ss.length; g.inTop=g.items.filter(x=>top100.has(x.j)).length;
+      return g;
+    }).sort((a,b)=>b.avg-a.avg || b.inTop-a.inTop); // 평균 점수 순 = 보통 잘 맞는 순
+
+    // 궁합(평균)이 순위를 정함 — 시기는 조율 가능한 변수라 배제하지 않고 배지로만 표시 (일주 단위는 세운만)
+    const recs=[];
+    for(const g of groups.slice(0,5)){
+      let tBest=0;
+      if(res.target){ tBest=timingBest(marriageYearsAll(res.A,g.rep,null,res.target[0],res.target[1]),res.target); }
+      const full=scorePair(res.A,g.rep,res.W,res.yong);
+      recs.push(Object.assign({},g,{R:full.R,tBest,style:styleOf(g.rep)}));
+    }
+    return { recs, skipped:[] };
+  }
+  function renderReco(res){
+    if(!res.reco) res.reco = buildReco(res);
+    const recs = res.reco.recs, skipped = res.reco.skipped;
+    let html='<p class="reco-note">범위 내 모든 날짜를 채점해 <b>일주별 평균 점수(궁합)</b>가 높은 순으로 추천합니다 (평균 = 그 일주가 <b>보통</b> 나와 맞는 정도). "상위 100위 내 N건"은 특급 매치 빈도(참고).'+(res.target?' 목표 시기 적합도는 <b>배지로만</b> 표시하며 순위·선정에서 배제하지 않습니다(시기는 조율 가능한 변수).':'')+' 개별 날짜는 아래 "전체 목록"에서.</p>';
+    if(skipped.length) html+='<p class="note">상위권이지만 추천에서 제외된 일주: '+skipped.map(r=>r.name+' — '+r.why).join(' · ')+' (전체 목록에는 나옵니다)</p>';
+    if(!recs.length){
+      html+='<p class="note">조건을 충족하는 일주가 없습니다. 출생년도 범위를 넓히거나 목표 시기를 비워 보세요.</p>';
+    } else {
+      if(recs.length<5) html+='<p class="note">조건을 충족하는 일주가 '+recs.length+'종입니다 (억지로 채우지 않습니다).</p>';
+      recs.forEach((g,i)=>{
+        // 왜 추천? — 일주가 고정하는 관계 근거만 (오행/용신/배우자성 등 개인별 변동분 제외)
+        const why = g.R.filter(x=>x.p>0 && !/용신|희신|기신|과다|투출|상호 보완|상대에게 부담|배우자성|오행 상보/.test(x.t))
+          .slice(0,3).map(x=>x.t.split(' — ')[0].split(' (')[0]).join(' · ') || '무난한 관계 구성';
+        const tgt = res.target ? '<span class="tgt-badge">목표 '+res.target[0]+'~'+res.target[1]+': '+tgtLabelOf(g.tBest,0,0)+'</span>' : '';
+        html+='<div class="result-item reco-item">'
+          +'<div class="result-top">'
+          +'<span class="rank">추천'+(i+1)+'</span>'
+          +'<span class="rdate">'+iljuSquares(g.ds,g.db)+'</span>'
+          +'<span class="score">평균 '+g.avg+'점 <small>범위 '+g.mn+'~'+g.mx+'</small></span>'
+          +'</div>'
+          +(tgt?'<div class="badges-row">'+tgt+'</div>':'')
+          +'<div class="reco-count">평균 '+g.avg+'점(순위 기준) · 상위 100위 내 '+g.inTop+'건(자주 나오는 정도)</div>'
+          +'<div class="reco-why"><b>왜 잘 맞나?</b> '+why+'</div>'
+          +'<div class="reco-style"><b>상대 스타일</b> — '+g.style+'</div>'
+          +'</div>';
+      });
+      html+='<p class="note">※ 대운 흐름·부부궁 충은 같은 일주라도 태어난 월·해에 따라 달라, 일주 단위로 말할 수 없습니다 — 개별 날짜의 "장기 흐름 보기"(전체 목록)에서 확인하세요.'+(res.target?' 목표 시기 유리도는 세운 기반이라 일주 단위로 일정합니다.':'')+'</p>';
+    }
+    $('reco').innerHTML=html;
+  }
+  let flowMode = 'all', signalMode = 'all', rawOpen = false;
+  function renderResults(res){
+    $('reco-card').hidden = false;
+    renderReco(res);
+    $('results-summary').textContent =
+      '조건에 맞는 후보 '+res.count.toLocaleString()+'개를 평가했습니다 ('+res.elapsed+'초).'
+      + (res.yong!=null ? ' [용신 '+EL[res.yong]+' 적용]' : ' [용신 미적용]')
+      + (res.fDesc ? ' [적용: '+res.fDesc+']' : '');
+    const card=$('results-card'); card.hidden=false;
+    $('more-btn').textContent = rawOpen ? '목록 접기 ▴' : '더보기 ▾';
+    $('raw-wrap').hidden = !rawOpen;
+    if(!rawOpen) return;
+    const topN = parseInt($('top-n').value,10);
+    // 전체 날짜를 12시진 평균(표시값)순으로 정렬한 res.allDates를 사용 → 목록 순서 = 표시 점수 순서
+    const rows=[];
+    for(const d of res.allDates){
+      if(!d.tl) d.tl = tlDataFor(res, d.c);   // 날짜별 흐름/세운 (한 번만 계산해 캐시)
+      const tl = d.tl;
+      const tSpan = res.target ? (res.target[1]-res.target[0]+1) : 0;
+      let tChung = 0;
+      if(res.target){ for(let y=res.target[0]; y<=res.target[1]; y++) if(tl.chAll.has(y)) tChung++; }
+      const tBest = res.target ? timingBest(tl.years, res.target) : 0;
+      if(flowMode==='nowarn' && tl.flow.g==='warn') continue;             // 흐름 주의 제외
+      if(flowMode==='goodonly' && tl.flow.g!=='good') continue;           // 순탄만
+      if(res.target && signalMode==='nosignal' && tBest<1) continue;      // 신호 없음 제외
+      if(res.target && signalMode==='staronly' && tBest<3.2) continue;    // ★ 매우 유리만
+      // 근거는 평균에 가장 가까운 시진 것으로 (표시 행에서만 재계산)
+      const g=fromJdn(d.j); let repR=null, repDiff=Infinity;
+      for(let hb=0;hb<12;hb++){
+        const rep = hb===0 ? 0.75 : hb*2+0.5;
+        const sp=scorePair(res.A,buildChart(g.y,g.m,g.d,rep,res.corrected,res.ptG),res.W,res.yong);
+        const dd=Math.abs(sp.s-d.avg); if(dd<repDiff){ repDiff=dd; repR=sp.R; }
+      }
+      rows.push({rank:rows.length+1, c:d.c, score:d.avg, mn:d.mn, mx:d.mx, R:repR, tlHtml:tl.html, flow:tl.flow, tBest, tChung, tSpan, style:styleOf(d.c)});
+      if(rows.length>=topN) break;
+    }
+    res.rows = rows; // CSV 내보내기용
+    $('x-warn-sel').value = flowMode;
+    $('x-signal-wrap').hidden = !res.target;
+    $('x-signal-sel').value = signalMode;
+    const out=[];
+    for(const r of rows){
+      const c=r.c;
+      const j=c.jdn, wd=WEEKDAY[j%7];
+      const diff=c.y-res.myYear;
+      const rel = diff===0?'동갑':(diff>0?diff+'살 연하':(-diff)+'살 연상');
+      const dateStr = c.y+'-'+String(c.m).padStart(2,'0')+'-'+String(c.d).padStart(2,'0');
+      let li='';
+      for(const it of r.R){
+        li+='<li><span class="'+(it.p>=0?'plus':'minus')+'">'+(it.p>=0?'+':'')+it.p+'</span> '+it.t+'</li>';
+      }
+      const tgt = res.target
+        ? '<span class="tgt-badge">목표 '+res.target[0]+'~'+res.target[1]+': '+tgtLabelOf(r.tBest,r.tChung,r.tSpan)+'</span>'
+        : '';
+      const flowB = flowBadgeHtml(r.flow);
+      out.push('<div class="result-item">'
+        +'<div class="result-top">'
+        +'<span class="rank">#'+r.rank+'</span>'
+        +'<span class="rdate">'+dateStr+' ('+wd+') '+ST[c.ds]+BR[c.db]+'일주</span>'
+        +'<span class="rhour">'+ZODIAC[c.yb]+'띠 · '+rel+'</span>'
+        +'<span class="score">'+r.score+'점</span>'
+        +'<span class="grade">시진별 '+r.mn+'~'+r.mx+'</span>'
+        +'</div>'
+        +'<div class="badges-row">'+flowB+tgt+'</div>'
+        +'<div class="pgrid compact">'+tileCol('일주',c.ds,c.db)+tileCol('월주',c.ms,c.mb)+tileCol('년주',c.ys,c.yb)+'</div>'
+        +'<div class="note" style="margin-top:6px;">대표 '+r.score+'점 = 12시진 평균(시간 미상의 기대값) · 시간 확정 시 '+r.mn+'~'+r.mx+' 사이</div>'
+        +'<div class="reco-style" style="margin-top:6px;"><b>상대 스타일</b> — '+r.style+'</div>'
+        +'<details><summary>점수 근거 보기 ('+r.R.length+'항목)</summary><ul>'+li+'</ul></details>'
+        + r.tlHtml
+        +'</div>');
+    }
+    $('results').innerHTML = out.join('') || '<p class="note">결과가 없습니다.</p>';
+  }
+  $('more-btn').addEventListener('click', ()=>{ rawOpen=!rawOpen; if(lastResults) renderResults(lastResults); });
+  $('x-warn-sel').addEventListener('change', e=>{ flowMode=e.target.value; if(lastResults) renderResults(lastResults); });
+  $('x-signal-sel').addEventListener('change', e=>{ signalMode=e.target.value; if(lastResults) renderResults(lastResults); });
+  $('top-n').addEventListener('change', ()=>{ if(lastResults && rawOpen) renderResults(lastResults); });
+
+  $('csv-btn').addEventListener('click', ()=>{
+    if(!lastResults || !lastResults.rows){ alert('먼저 "더보기"로 전체 목록을 연 뒤 내려받아 주세요.'); return; }
+    const lines=['순위,생년월일,요일,년주,월주,일주,띠,대표점수(시주제외),시진범위,흐름,목표적합,상대스타일,주요근거'];
+    for(const r of lastResults.rows){
+      const c=r.c;
+      const dateStr=c.y+'-'+String(c.m).padStart(2,'0')+'-'+String(c.d).padStart(2,'0');
+      const reasons=r.R.slice(0,5).map(x=>(x.p>=0?'+':'')+x.p+' '+x.t).join(' / ');
+      const tgt = lastResults.target ? tgtLabelOf(r.tBest,r.tChung,r.tSpan) : '-';
+      lines.push([r.rank,dateStr,WEEKDAY[c.jdn%7],
+        ST[c.ys]+BR[c.yb],ST[c.ms]+BR[c.mb],ST[c.ds]+BR[c.db],
+        ZODIAC[c.yb]+'띠',r.score,r.mn+'~'+r.mx,r.flow.label,tgt,
+        '"'+r.style.replace(/"/g,'""')+'"','"'+reasons.replace(/"/g,'""')+'"'].join(','));
+    }
+    const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='saju_match_results.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+})();
+}
+/* 테스트용 내보내기 (브라우저에서는 무시됨) */
+if(typeof module!=='undefined' && module.exports){
+  module.exports = { jdnOf, fromJdn, dayPillar, yearMonthPillars, buildChart, scorePair,
+    termsOfYear, ipchunJd, hourBranchOf, hourStemOf, sunLongitude, ST, BR, EL, mod,
+    searchCandidates, candidateChart, hourLabel, pillarStr, gradeOf,
+    analyzeChart, elemRatio, yongScore, daewoonOf, timelineFor, windByYear, yearRanges,
+    seunSignals, marriageYears, marriageYearsAll, daewoonMarriageBg, flowGrade, styleOf, CUR_YEAR };
+}
+</script>
+</body>
+</html>
