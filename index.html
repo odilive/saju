@@ -557,11 +557,24 @@ function elemRatio(c, e){ // 사주 내 특정 오행의 자리 가중 비중 (0
   if(c.hb!=null) put(BE[c.hb],FULL_W.hb);
   return total ? hit/total : 0;
 }
-function yongScore(r){ // 용신 세력 적정 곡선: 과소 0 ~ 적정(30~45%) 20 ~ 과다 8
-  if(r<=0.10) return Math.round(r/0.10*6);
-  if(r<=0.30) return Math.round(6+(r-0.10)/0.20*14);
-  if(r<=0.45) return 20;
-  if(r<=0.65) return Math.round(20-(r-0.45)/0.20*12);
+function elemCount(c, e){ // 그 오행이 실제 몇 글자인가 (present 자리에서 직접 카운트 — ec 비의존)
+  let cnt=0;
+  [c.ys,c.ms,c.ds,c.hs].forEach(s=>{ if(s!=null && SE[s]===e) cnt++; });
+  [c.yb,c.mb,c.db,c.hb].forEach(b=>{ if(b!=null && BE[b]===e) cnt++; });
+  return cnt;
+}
+// '그 오행을 얼마나 갖췄나' = 자리 세력(월지 가중)과 실제 글자 수를 절반씩 — 월지 1글자만으로 '많음'이 되지 않게
+function elemAbundance(c, e){
+  const w = elemRatio(c, e);
+  let tot=0; [c.ys,c.ms,c.ds,c.hs,c.yb,c.mb,c.db,c.hb].forEach(x=>{ if(x!=null) tot++; });
+  const cRatio = tot ? elemCount(c,e)/tot : 0;
+  return (w+cRatio)/2;
+}
+function yongScore(r){ // 용신 충실도(세력+개수 혼합) 곡선: 과소 0 ~ 적정(40~55%) 20 ~ 과다 8
+  if(r<=0.10) return Math.round(r/0.10*5);
+  if(r<=0.40) return Math.round(5+(r-0.10)/0.30*15);
+  if(r<=0.55) return 20;
+  if(r<=0.75) return Math.round(20-(r-0.55)/0.20*12);
   return 8;
 }
 
@@ -781,10 +794,10 @@ function scorePair(A,B,W,yong,myAn){
   { const spE = A.g==='M' ? mod(ae+2,5) : mod(ae+3,5);
     const isGisin = (yong!=null) && spE===mod(yong+3,5);
     if(!isGisin){
-      const spR = elemRatio(B, spE), sp = Math.round(spR*100);
-      if(spR>=0.15 && spR<=0.45) add(4, '배우자성('+EL[spE]+') 충실 — 상대 사주에 '+sp+'%로 배우자 기운이 뚜렷함');
-      else if(spR>=0.08) add(2, '배우자성('+EL[spE]+') 보유 — 상대 사주에 '+sp+'%');
-      else if(spR<0.05) add(-2, '배우자성('+EL[spE]+') 미약 — 상대 사주에 '+sp+'%뿐');
+      const spR = elemAbundance(B, spE), sp = Math.round(spR*100), spc = elemCount(B,spE);
+      if(spR>=0.22 && spR<=0.55) add(4, '배우자성('+EL[spE]+') 충실 — 상대 사주에 '+spc+'글자('+sp+'%)로 배우자 기운이 뚜렷함');
+      else if(spR>=0.12) add(2, '배우자성('+EL[spE]+') 보유 — 상대 사주에 '+spc+'글자('+sp+'%)');
+      else if(spR<0.06) add(-2, '배우자성('+EL[spE]+') 미약 — 상대 사주에 '+spc+'글자('+sp+'%)뿐');
     } }
 
   applyBranch('일지(배우자궁)', A.db, B.db, {hap:15,sam:11,same:2,jah:-4,chung:-15,won:-9,hae:-6,hyu:-7}, addIlji);
@@ -794,11 +807,12 @@ function scorePair(A,B,W,yong,myAn){
   if(yong!=null){ // 용신 세력 기반 채점 (선택 시 오행 상보를 대체)
     myAn = myAn || analyzeChart(A);
     const weakMe = myAn.verdict==='weak' || (myAn.verdict==='border' && myAn.lean==='weak');
-    const yr=elemRatio(B,yong), pct=Math.round(yr*100);
+    const yr=elemAbundance(B,yong), pct=Math.round(yr*100), yc=elemCount(B,yong);
     const yp=yongScore(yr);
-    if(yp!==0) addOh(yp, '용신('+EL[yong]+') 세력 — 상대 사주 내 비중 '+pct+'%'+(pct>55?' · 과다 주의':(pct>=20?' · 유력':' · 미약')));
+    const ylab = yr>0.60?' · 과다 주의' : (yp>=18?' · 충실':(yp>=12?' · 유력':(yp>=6?' · 보통':' · 미약')));
+    if(yp!==0) addOh(yp, '용신('+EL[yong]+') '+yc+'글자 (세력 '+pct+'%)'+ylab);
     // 신약한 나를 직접 극하는 오행(관성)이 상대에게 과다하면 감점
-    const threat=mod(ae+3,5), tr=elemRatio(B,threat);
+    const threat=mod(ae+3,5), tr=elemAbundance(B,threat);
     if(weakMe && tr>=0.35){
       const gwanIn = yr>=0.25; // 용신(인성)이 유력하면 관인상생으로 일부 중화
       const pen = tr>=0.5 ? (gwanIn?-8:-14) : (gwanIn?-4:-8);
@@ -819,26 +833,26 @@ function scorePair(A,B,W,yong,myAn){
     // 비겁으로 대체 (억부의 인비 희용 논리)
     let hui=mod(yong+4,5), huiWhy='용신을 생해 주는 기운을 적정하게 갖춤';
     if(weakMe && hui===threat){ hui=ae; huiWhy='비겁 — 약한 내 일간을 거들어 주는 기운'; }
-    const hr=elemRatio(B,hui);
-    if(hr>=0.18 && hr<=0.40) addOh(Math.min(5,Math.round(hr*12)), '희신('+EL[hui]+') — '+huiWhy);
+    const hr=elemAbundance(B,hui);
+    if(hr>=0.18 && hr<=0.50) addOh(Math.min(5,Math.round(hr*11)), '희신('+EL[hui]+') — '+huiWhy);
     // 기신(용신을 극하는 오행) 과다
-    const gi=mod(yong+3,5), gr=elemRatio(B,gi);
-    if(gr>=0.40) addOh(-6, '기신('+EL[gi]+') 과다 — 용신을 극하는 기운이 강한 사주');
+    const gi=mod(yong+3,5), gr=elemAbundance(B,gi);
+    if(gr>=0.40) addOh(-6, '기신('+EL[gi]+') 과다 '+elemCount(B,gi)+'글자 — 용신을 극하는 기운이 강한 사주');
     // 내게 불리한 방향의 오행 과다 감점 (신약: 설기·소모 / 신강: 가중) — 용신·희신·기신과 겹치면 제외
     const burdens = weakMe ? [[mod(ae+1,5),'식상'],[mod(ae+2,5),'재성']] : [[mod(ae+4,5),'인성'],[ae,'비겁']];
     for(const bu of burdens){
       if(bu[0]===yong || bu[0]===hui || bu[0]===gi) continue;
-      const burdR=elemRatio(B,bu[0]);
-      if(burdR>=0.45) addOh(-5, bu[1]+'('+EL[bu[0]]+') 과다 '+Math.round(burdR*100)+'% — '
+      const burdR=elemAbundance(B,bu[0]);
+      if(burdR>=0.45) addOh(-5, bu[1]+'('+EL[bu[0]]+') 과다 '+elemCount(B,bu[0])+'글자 — '
         +(weakMe?'약한 내 일간의 기운을 크게 빼감':'강한 내 일간을 더욱 강하게 만듦'));
     }
     // 상호 보완 — 내가 상대에게도 이로운가 (결혼 궁합 지속성). 상대 용신은 억부로 자동 판정. 가중 0.5로 보조 반영
     { const bYong = analyzeChart(B).eokbu;
-      const aToYong = elemRatio(A, bYong);
+      const aToYong = elemAbundance(A, bYong);
       const mb = Math.round(yongScore(aToYong)*0.5);
-      if(mb>0) addOh(mb, '상호 보완 — 내가 상대 용신('+EL[bYong]+')을 '+Math.round(aToYong*100)+'% 공급 (서로에게 이로운 관계)');
-      const bGi = mod(bYong+3,5), aToGi = elemRatio(A, bGi);
-      if(aToGi>=0.35 && aToYong<0.15) addOh(-5, '상대에게 부담 — 내가 상대 기신('+EL[bGi]+')을 '+Math.round(aToGi*100)+'% 공급해 상대 균형을 해침');
+      if(mb>0) addOh(mb, '상호 보완 — 내가 상대 용신('+EL[bYong]+')을 '+elemCount(A,bYong)+'글자 공급 (서로에게 이로운 관계)');
+      const bGi = mod(bYong+3,5), aToGi = elemAbundance(A, bGi);
+      if(aToGi>=0.35 && aToYong<0.15) addOh(-5, '상대에게 부담 — 내가 상대 기신('+EL[bGi]+')을 '+elemCount(A,bGi)+'글자 공급해 상대 균형을 해침');
     }
   }
   // 용신 미적용 시에는 오행축을 아예 두지 않고 합충·십성 관계만으로 채점한다 (maxPos에서 ohaeng 제외)
@@ -1500,7 +1514,7 @@ if(typeof module!=='undefined' && module.exports){
   module.exports = { jdnOf, fromJdn, dayPillar, yearMonthPillars, buildChart, scorePair,
     termsOfYear, ipchunJd, hourBranchOf, hourStemOf, sunLongitude, ST, BR, EL, mod,
     searchCandidates, candidateChart, hourLabel, pillarStr, gradeOf,
-    analyzeChart, elemRatio, yongScore, daewoonOf, timelineFor, windByYear, yearRanges,
+    analyzeChart, elemRatio, elemAbundance, elemCount, yongScore, daewoonOf, timelineFor, windByYear, yearRanges,
     seunSignals, marriageYears, marriageYearsAll, daewoonMarriageBg, flowGrade, styleOf, dayPassesFilters, CUR_YEAR };
 }
 </script>

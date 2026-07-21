@@ -20,6 +20,7 @@
 | onetoone-test.js | 1:1 궁합 코어 — 시간 알 때/모를 때 점수·근거·상대 분석·스타일 |
 | reco-filter-test.js | buildReco가 상세 조건(일간/일지 지정·오행 최소 개수·배제 조건)을 실제 반영하는지 (회귀 버그 수정 검증) |
 | daewoon-burden-test.js | 대운-배우자궁 관계 확장 — 정충 외 형·원진·해·자형 감지, chung(등급용,정충만)과 burden(표시용,전체) 분리 검증 |
+| abundance-test.js | 오행 충실도 = 세력+개수 혼합(elemAbundance) — 월지 1글자는 만점 아님, 여러 글자여야 높음, 과다는 감점 |
 | flow-test.js | 장기 흐름 등급(순탄/보통/주의) 경계 조건 |
 | reco-test.js | 추천 Top5(일주 단위 집계) — 게이트·희소 유형·점수 범위·styleOf |
 | canon-test.js | **고전 정답표 전수 검증(관계축)** — 60일주 × 천지덕합 1위 여부 + 쌍충 배제 |
