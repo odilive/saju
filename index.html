@@ -595,7 +595,19 @@ function timelineFor(c, gender, yong, winY0, winN){
       if(be===yong || be===mod(yong+4,5)) wind='good';
       else if(be===mod(yong+3,5)) wind='bad';
     }
-    cells.push({ s:seg.s, b:seg.b, from, to, wind, chung: Math.abs(seg.b-c.db)===6 });
+    // 배우자궁(일지) 부담: 정충뿐 아니라 형·원진·해·자형까지 — 대운 지지가 본인 일지와 마찰 관계인가
+    let burdenType=null;
+    if(c.db!=null){
+      if(Math.abs(seg.b-c.db)===6) burdenType='충';
+      else if(seg.b===c.db){ if([4,6,9,11].includes(seg.b)) burdenType='자형'; }
+      else if(HYUNG.has(pkey(seg.b,c.db))) burdenType='형';
+      else if(WONJIN.has(pkey(seg.b,c.db))) burdenType='원진';
+      else if(HAE.has(pkey(seg.b,c.db))) burdenType='해';
+    }
+    cells.push({ s:seg.s, b:seg.b, from, to, wind,
+      chung: burdenType==='충',      // 정충만 — 등급 판정(주의 트리거·세운 제외)에 쓰이는 강한 신호
+      burden: burdenType!=null,      // 충+형+원진+해+자형 — 화면 표시용(약한 신호 포함), 등급엔 미반영
+      burdenType });
   }
   if(cells.length && cells[0].from>winY0)
     cells.unshift({ s:null, b:null, from:winY0, to:cells[0].from-1, wind:'mid', chung:false, pre:true });
@@ -1212,10 +1224,10 @@ if(typeof document !== 'undefined'){
       const yrs = cl.to-cl.from+1;
       const name = cl.pre ? '대운 전' : ST[cl.s]+BR[cl.b];
       const tag = cl.wind==='good' ? ' 순' : (cl.wind==='bad' ? ' 역' : '');
-      const warn = cl.chung ? '<span class="tl-warn" title="배우자궁(일지) 충 구간">⚠</span>' : '';
+      const warn = cl.burden ? '<span class="tl-warn" title="배우자궁(일지) '+cl.burdenType+' 구간'+(cl.chung?'':' — 정충보다 약한 신호')+'">⚠</span>' : '';
       const title = (cl.pre?'첫 대운 이전':name+' 대운')+' '+cl.from+'~'+cl.to
         + (cl.wind==='good'?' · 순풍(용신을 돕는 운)':cl.wind==='bad'?' · 역풍(용신을 극하는 운)':'')
-        + (cl.chung?' · 배우자궁 충 주의':'');
+        + (cl.burden?' · 배우자궁 '+cl.burdenType+' 주의'+(cl.chung?'':' (충보다 약함)'):'');
       return '<div class="tl-cell tl-'+cl.wind+'" style="flex-grow:'+yrs+'" title="'+title+'">'
         + name+warn+'<small>\''+String(cl.from%100).padStart(2,'0')+'~'+tag+'</small></div>';
     }).join('');
@@ -1252,9 +1264,9 @@ if(typeof document !== 'undefined'){
       parts.push('두 사람 모두 순풍 '+both+'년');
       parts.push('동반 역풍 '+(bb.length?bb.join(', '):'없음'));
     }
-    const chAr=tlA.cells.filter(x=>x.chung).map(x=>x.from+'~'+x.to);
-    const chBr=tlB.cells.filter(x=>x.chung).map(x=>x.from+'~'+x.to);
-    parts.push('배우자궁 충 구간 — 나: '+(chAr.length?chAr.join(', '):'없음')+' / 상대: '+(chBr.length?chBr.join(', '):'없음'));
+    const chAr=tlA.cells.filter(x=>x.burden).map(x=>x.from+'~'+x.to+'('+x.burdenType+')');
+    const chBr=tlB.cells.filter(x=>x.burden).map(x=>x.from+'~'+x.to+'('+x.burdenType+')');
+    parts.push('배우자궁 충·형 등 구간 — 나: '+(chAr.length?chAr.join(', '):'없음')+' / 상대: '+(chBr.length?chBr.join(', '):'없음'));
     // 구간 내 유리한 해를 연도순으로 모두 표시(과다하면 상한 12), 강한 순 ★
     const CAP=12;
     const chrono = years.slice().sort((a,b)=>a.Y-b.Y);
@@ -1265,7 +1277,7 @@ if(typeof document !== 'undefined'){
       : winLabel+' 중 두 사람 모두에게 신호가 있는 해가 없습니다';
     const legend = '<div class="tl-legend">'
       + (myYong!=null ? '<span class="lg lg-good">■ 순풍(용신을 돕는 대운)</span><span class="lg lg-bad">■ 역풍(용신을 극하는 대운)</span><span class="lg">□ 중립</span>' : '')
-      + '<span class="lg">⚠ 배우자궁 충</span></div>';
+      + '<span class="lg">⚠ 배우자궁 충·형·원진·해</span></div>';
     const html = '<details><summary>장기 흐름 · 시기 보기 (대운/세운)</summary><div class="tl">'
       + '<div class="tl-row"><span class="tl-name">나</span><div class="tl-band">'+tlCellsHtml(tlA.cells)+'</div></div>'
       + '<div class="tl-row"><span class="tl-name">상대</span><div class="tl-band">'+tlCellsHtml(tlB.cells)+'</div></div>'
@@ -1275,7 +1287,7 @@ if(typeof document !== 'undefined'){
       + '<p class="note">'+CUR_YEAR+'년부터 30년 창.'
       + (myYong!=null?' 순풍/역풍은 각자의 용신 기준(나: 선택값 / 상대: 자동 억부 판단).':'')
       + ' 세운 계산 구간: '+winLabel+(res.target?' (목표 시기)':' (기본 근미래)')+'. 방아쇠(2층)=배우자성 도래(천간1·지지0.5)+배우자궁 합1·충0.5+일간 명암합0.5, 여기에 지배 대운이 결혼기면(1층) 증폭. ★=합산 강도 3.2+. 양쪽 모두 방아쇠 있고 합산 2+ 인 해만, 배우자궁 충 대운의 해는 제외.'
-      + ' 대운 지지의 오행과 충 여부만 보는 보수적 계산이며, 점수에는 포함되지 않습니다.'
+      + ' 대운 지지의 오행과, 배우자궁과의 충(등급·시기 판정에 반영)·형·원진·해(⚠ 표시만, 등급엔 미반영)를 보는 보수적 계산이며, 점수에는 포함되지 않습니다.'
       + ' 흐름 등급(20년 창): 주의=부부궁 충이 10년 내 시작 또는 동반 역풍 6년 이상 / 순탄=충 없음·동반 역풍 2년 이하'+(myYong!=null?'·동반 순풍 8년 이상':'')+'.</p>'
       + '</div></details>';
     return { html, years, chAll, flow };
