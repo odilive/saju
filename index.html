@@ -1119,7 +1119,7 @@ if(typeof document !== 'undefined'){
       if(curPreset && curPreset!=='balance') fParts.push('프리셋: '+PRESET_KO[curPreset]);
       else if(WCATS.some(([k])=>W[k]!==1)) fParts.push('가중치 조정');
       flowMode = 'all'; signalMode = 'all'; rawOpen = false;
-      lastResults = {keep, y1, y2,
+      lastResults = {keep, y1, y2, F,
         corrected, myYear:by, count, fDesc:fParts.join(' · '), A, myG, ptG, yong, target, elapsed, W};
       renderResults(lastResults);
       $('reco-card').scrollIntoView({behavior:'smooth'});
@@ -1305,10 +1305,24 @@ if(typeof document !== 'undefined'){
     const j1=jdnOf(res.y1,1,1), j2=jdnOf(res.y2,12,31);
     const byIlju=new Map(); const all=[]; const flat=[];
     for(let j=j1;j<=j2;j++){
+      const dp=dayPillar(j);
+      if(!dayPassesFilters(res.A,dp,res.F)) continue; // 일간/일지 지정, 자형/충/원진/형해 등 (하루 단위로 판정 가능한 조건)
       const g=fromJdn(j);
-      const c=buildChart(g.y,g.m,g.d,null,res.corrected,res.ptG); // rep 차트(시 무관: 스타일·근거·목표)
-      let sum=0, dmn=Infinity, dmx=-Infinity; // 그 날짜의 12시진 평균/최저/최고
-      for(let hb=0;hb<12;hb++){ const rep=hb===0?0.75:hb*2+0.5; const s=scorePair(res.A,buildChart(g.y,g.m,g.d,rep,res.corrected,res.ptG),res.W,res.yong).s; sum+=s; if(s<dmn)dmn=s; if(s>dmx)dmx=s; }
+      const c=buildChart(g.y,g.m,g.d,null,res.corrected,res.ptG); // rep 차트(정오 기준) — 스타일·근거·목표·띠 판정용
+      if(res.F && res.F.noYearChung && Math.abs(res.A.yb-c.yb)===6) continue; // 띠(년지) 충 배제
+      let sum=0, dmn=Infinity, dmx=-Infinity; const ecSum=[0,0,0,0,0];
+      for(let hb=0;hb<12;hb++){
+        const rep=hb===0?0.75:hb*2+0.5;
+        const ch=buildChart(g.y,g.m,g.d,rep,res.corrected,res.ptG);
+        const s=scorePair(res.A,ch,res.W,res.yong).s;
+        sum+=s; if(s<dmn)dmn=s; if(s>dmx)dmx=s;
+        for(let e=0;e<5;e++) ecSum[e]+=ch.ec[e];
+      }
+      if(res.F && res.F.minEl.some(x=>x>0)){ // 오행 최소 개수 — 12시진 평균 개수 기준(시간 무관 판정)
+        let ok=true;
+        for(let e=0;e<5;e++) if(res.F.minEl[e]>0 && Math.round(ecSum[e]/12)<res.F.minEl[e]){ ok=false; break; }
+        if(!ok) continue;
+      }
       const dAvg=Math.round(sum/12);
       flat.push({j,c,avg:dAvg,mn:dmn,mx:dmx,tl:null});
       const ik=c.ds+'-'+c.db;
@@ -1475,7 +1489,7 @@ if(typeof module!=='undefined' && module.exports){
     termsOfYear, ipchunJd, hourBranchOf, hourStemOf, sunLongitude, ST, BR, EL, mod,
     searchCandidates, candidateChart, hourLabel, pillarStr, gradeOf,
     analyzeChart, elemRatio, yongScore, daewoonOf, timelineFor, windByYear, yearRanges,
-    seunSignals, marriageYears, marriageYearsAll, daewoonMarriageBg, flowGrade, styleOf, CUR_YEAR };
+    seunSignals, marriageYears, marriageYearsAll, daewoonMarriageBg, flowGrade, styleOf, dayPassesFilters, CUR_YEAR };
 }
 </script>
 </body>
