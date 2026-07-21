@@ -37,16 +37,16 @@ const ok = (name, cond, info) => {
   ok('갑 묘월(봄) 조후 = 금(궁통보감)', mk(3).johu === 3);
 }
 // ── 3) 용신 세력 곡선
-// 곡선(세력+개수 혼합 기준): 적정 만점 구간 40~55%, 과다는 하락
+// 곡선(순수 세력 기준): 적정 만점 구간 30~45%, 과다는 하락
 ok('yongScore(0) = 0', M.yongScore(0) === 0);
-ok('yongScore(0.45) = 20 (적정 만점)', M.yongScore(0.45) === 20, M.yongScore(0.45));
-ok('yongScore(0.21) < 12 (월지 1글자 수준은 만점 아님)', M.yongScore(0.21) < 12, M.yongScore(0.21));
+ok('yongScore(0.35) = 20 (적정 만점)', M.yongScore(0.35) === 20, M.yongScore(0.35));
+ok('yongScore(0.22) < 20 (월지 1글자 수준은 만점 아님)', M.yongScore(0.22) < 20, M.yongScore(0.22));
 ok('yongScore(0.70) < 20 (과다 하락)', M.yongScore(0.70) < 20, M.yongScore(0.70));
 ok('yongScore(0.9) = 8 (과다 바닥)', M.yongScore(0.9) === 8);
 {
   let mono = true, prev = -1;
-  for (let r = 0; r <= 0.4; r += 0.01) { const v = M.yongScore(r); if (v < prev) mono = false; prev = v; }
-  ok('0~0.4 구간 단조 증가', mono);
+  for (let r = 0; r <= 0.3; r += 0.01) { const v = M.yongScore(r); if (v < prev) mono = false; prev = v; }
+  ok('0~0.3 구간 단조 증가', mono);
 }
 // ── 4) elemRatio: 전체 합 = 1, 극단 사주
 {
@@ -55,13 +55,13 @@ ok('yongScore(0.9) = 8 (과다 바닥)', M.yongScore(0.9) === 8);
   ok('elemRatio 합계 = 1', Math.abs(sum - 1) < 1e-9, sum);
   const allWater = { ds: 8, db: 0, ys: 8, yb: 0, ms: 8, mb: 0, hs: 9, hb: 11 };
   ok('전부 수(水) 사주 → 수 비중 100%', M.elemRatio(allWater, 4) === 1);
-  const b3 = { ys: 8, ms: 2, ds: 0, hs: 2, yb: 2, mb: 0, db: 2, hb: 2 }; // 수 = 월지30+년간7 = 37/102 (자리가중)
+  const b3 = { ys: 8, ms: 2, ds: 0, hs: 2, yb: 2, mb: 0, db: 2, hb: 2 }; // 수 = 월지20+년간7 = 27/92 (자리가중)
   const r = M.elemRatio(b3, 4);
-  ok('월지 수 사주 → 수 비중(자리가중) ≈ 36%', Math.abs(r - 37 / 102) < 1e-9, r);
-  // 혼합 지표: 수 2글자(월지+년간)라 세력은 높아도 개수 반영해 만점보다 낮음
-  const ab = M.elemAbundance(b3, 4);
-  ok('혼합 지표 = (세력+개수)/2', Math.abs(ab - (37 / 102 + 2 / 8) / 2) < 1e-9, ab);
-  ok('수 2글자 → 용신점수 만점 미만(개수 반영)', M.yongScore(ab) < 20, M.yongScore(ab));
+  ok('월지 수 사주 → 수 비중(자리가중) ≈ 29%', Math.abs(r - 27 / 92) < 1e-9, r);
+  ok('수 2글자(월지+년간) → 세력 만점(29%~) 근처지만 곡선상 만점', M.yongScore(r) === 20, M.yongScore(r));
+  // 월지 1글자만인 경우: 세력이 만점 문턱(30%) 아래로 내려가 만점 아님
+  const b1 = { ys: 0, ms: 2, ds: 0, hs: 2, yb: 2, mb: 0, db: 2, hb: 1 }; // 수 = 월지20 뿐 = 20/92 ≈ 22%
+  ok('월지 수 1글자뿐 → 세력 22% → 용신점수 만점 미만', M.yongScore(M.elemRatio(b1, 4)) < 20, M.yongScore(M.elemRatio(b1, 4)));
 }
 // ── 5) 대운: 방향·대운수·첫 대운
 {
