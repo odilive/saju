@@ -20,6 +20,7 @@ function simulateBuildReco(res) {
     const g = M.fromJdn(j);
     const c = M.buildChart(g.y, g.m, g.d, null, res.corrected, res.ptG);
     if (res.F && res.F.noYearChung && Math.abs(res.A.yb - c.yb) === 6) continue;
+    if (res.F && res.F.noIljiSelfClash && M.iljiSelfClash(c.db, c.yb, c.mb, null)) continue;
     let ecSum = [0, 0, 0, 0, 0], sum = 0;
     for (let hb = 0; hb < 12; hb++) {
       const rep = hb === 0 ? 0.75 : hb * 2 + 0.5;
@@ -74,6 +75,14 @@ function simulateBuildReco(res) {
   const flatBase = simulateBuildReco(resBase), flatEx = simulateBuildReco(resEx);
   ok('충 일지 배제 시 결과 감소', flatEx.length < flatBase.length, flatBase.length + ' → ' + flatEx.length);
   ok('배제 후 결과에 충 일지(축) 없음', !flatEx.some(x => x.c.db === 1), [...new Set(flatEx.map(x => x.c.db))]);
+}
+// 5b) 배제 조건: 상대 배우자궁 원국 자체 형충 제외 (나와 무관, 상대 원국 내부 판정)
+{
+  const resBase = { A, corrected: true, ptG: 'F', W: null, yong: 4, y1: 1988, y2: 1996, F: { ds: null, db: null, minEl: [0, 0, 0, 0, 0] } };
+  const resEx = { A, corrected: true, ptG: 'F', W: null, yong: 4, y1: 1988, y2: 1996, F: { ds: null, db: null, minEl: [0, 0, 0, 0, 0], noIljiSelfClash: true } };
+  const flatBase = simulateBuildReco(resBase), flatEx = simulateBuildReco(resEx);
+  ok('일지자체형충 배제 시 결과 감소', flatEx.length < flatBase.length, flatBase.length + ' → ' + flatEx.length);
+  ok('배제 후 결과에 형충 있는 후보 없음', flatEx.every(x => !M.iljiSelfClash(x.c.db, x.c.yb, x.c.mb, null)), flatEx.length);
 }
 // 6) 존재하지 않는 일주 조합(음양 불일치)은 결과 0
 {
