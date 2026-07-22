@@ -1510,7 +1510,7 @@ if(typeof document !== 'undefined'){
         const sp=scorePair(res.A,buildChart(g.y,g.m,g.d,rep,res.corrected,res.ptG),res.W,res.yong);
         const dd=Math.abs(sp.s-d.avg); if(dd<repDiff){ repDiff=dd; repR=sp.R; }
       }
-      const mar = personalMarriageNote(d.c).filter(x=>x.kind!=='selfclash'); // 형충은 필터로 이미 배제, 나머지만 표시
+      const mar = personalMarriageNote(d.c); // 필터가 꺼져 있으면 형충 후보도 그대로 나오므로 항상 표시(필터는 선택적 배제일 뿐)
       rows.push({rank:rows.length+1, c:d.c, score:d.avg, mn:d.mn, mx:d.mx, R:repR, tlHtml:tl.html, flow:tl.flow, tBest, tChung, tSpan, style:styleOf(d.c), mar});
       if(rows.length>=topN) break;
     }
