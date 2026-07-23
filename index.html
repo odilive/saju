@@ -550,7 +550,7 @@ function analyzeChart(c){
     jong={ type:'strong', yong:own[0],
       why:'일간을 돕는 세력이 '+Math.round(r*100)+'%로 극단적이라, 억부(덜어내기)가 아니라 대세인 '+own[1]+'('+EL[own[0]]+')를 따르는 전왕(專旺)·종강(從强)일 수 있습니다' };
   }
-  return { gs, total, r, deukryeong, verdict, lean, eokbu, eokbuWhy, johu, johuWhy, jong, ae };
+  return { gs, total, r, deukryeong, verdict, lean, eokbu, eokbuWhy, johu, johuWhy, jong, ae, rooted };
 }
 function elemRatio(c, e){ // 사주 내 특정 오행의 자리 가중 비중 (0~1)
   let hit=0, total=0;
@@ -901,6 +901,48 @@ function iljiSelfClash(db, yb, mb, hb){
   }
   return chungHit || hyungHit;
 }
+// 일지(배우자궁)의 십성 — 지장간 본기(本氣) 천간 기준으로 판정(지지 자체의 양지/음지 배정이 아니라
+// 본기 천간의 실제 음양을 써야 정/편이 이론적으로 정확함)
+const ILJI_HONGI = [9,5,0,1,4,2,3,5,6,7,4,8]; // 자축인묘진사오미신유술해 → 본기 천간 인덱스
+const SIPSUNG_NAMES = [['비견','겁재'],['식신','상관'],['편재','정재'],['편관','정관'],['편인','정인']]; // [십성그룹][같은음양?0:1]
+function iljiSipsungOf(c){
+  const ae=SE[c.ds], hg=ILJI_HONGI[c.db], he=SE[hg];
+  const same=(c.ds%2)===(hg%2);
+  const grp=mod(he-ae,5);
+  return SIPSUNG_NAMES[grp][same?0:1];
+}
+function iljiSipsungTone(name, gender){ // 배우자성 계열(재성=남명/관성=여명)이 최상·경계를 가르고, 나머지는 성별 공통
+  if(gender==='M'){
+    if(name==='정재') return 'best'; if(name==='겁재') return 'worst';
+    if(name==='정관') return 'good'; if(name==='상관') return 'caution';
+  } else {
+    if(name==='정관') return 'best'; if(name==='상관') return 'worst';
+    if(name==='정재') return 'good'; if(name==='겁재') return 'caution';
+  }
+  return ({식신:'good',편재:'good',정인:'good',편관:'caution',편인:'caution',비견:'caution'})[name];
+}
+function iljiSipsungNote(c){
+  const name = iljiSipsungOf(c);
+  const tone = iljiSipsungTone(name, c.g);
+  const isM = c.g==='M';
+  const desc = {
+    정재: isM ? '배우자별(정재)이 배우자궁에 자리잡아 안정적인 배우자 인연으로 보는 대표적 길격'
+              : '배우자궁에 재물·실속의 기운(배우자별은 아니나 안정적)',
+    정관: isM ? '배우자궁에 명예·책임의 기운(배우자별은 아니나 안정적)'
+              : '배우자별(정관)이 배우자궁에 자리잡아 안정적인 배우자 인연으로 보는 대표적 길격',
+    식신: '온화하고 편안한 배우자궁',
+    편재: '활동적이고 사교적인 배우자 기운(정재보다는 변동성 있음)',
+    정인: '배우자가 나를 보살피는 안정적 기운(다만 과다하면 의존적일 수 있음)',
+    편관: '배우자와 다소 긴장감 있는 관계일 수 있음',
+    편인: '배우자와 정서적 거리감이 있을 수 있음',
+    비견: '배우자별이 자리잡지 못해 대등하지만 자기주장이 강해 부딪힐 수 있음',
+    겁재: isM ? '배우자별(정재)을 다투는 기운이 배우자궁에 있어 전통적으로 가장 경계하는 조합'
+              : '자기주장이 강해 배우자와 주도권 다툼 소지',
+    상관: isM ? '규율에 대한 반발 기질이 배우자궁에 있어 다소 마찰 소지'
+              : '배우자별(정관)을 극하는 기운이 배우자궁에 있어 전통적으로 가장 경계하는 조합',
+  }[name];
+  return { kind:'iljisipsung', tone, t:'일지(배우자궁)에 '+name+' — '+desc };
+}
 // 원국 단독으로 판단 가능한 배우자운 특이사항 — 상대와 무관, 표시 전용(점수 미반영)
 function personalMarriageNote(c){
   const spE = spouseElemOf(c), label = c.g==='M' ? '재성' : '관성';
@@ -908,15 +950,29 @@ function personalMarriageNote(c){
   let cnt=0;
   [c.ys,c.ms,c.hs].forEach(s=>{ if(s!=null && SE[s]===spE) cnt++; });
   [c.yb,c.mb,c.db,c.hb].forEach(b=>{ if(b!=null && BE[b]===spE) cnt++; });
-  if(cnt===0) notes.push({kind:'nospouse', t:'무'+label+'('+EL[spE]+' 없음) — 배우자 인연이 늦게 오거나 약한 편일 수 있어, 대운·세운의 배우자운 시기가 상대적으로 더 중요합니다.'});
+  if(cnt===0) notes.push({kind:'nospouse', tone:'caution', t:'무'+label+'('+EL[spE]+' 없음) — 배우자 인연이 늦게 오거나 약한 편일 수 있어, 대운·세운의 배우자운 시기가 상대적으로 더 중요합니다.'});
   let jeong=false, pyeon=false;
   [c.ys,c.ms,c.hs].forEach(s=>{
     if(s==null || SE[s]!==spE) return;
     if((c.ds%2)!==(s%2)) jeong=true; else pyeon=true;
   });
-  if(jeong && pyeon) notes.push({kind:'honjap', t:label+' 혼잡('+EL[spE]+' 정·편 모두 천간 투출) — 인연이 산만해지거나 관계에 갈등 소지가 있을 수 있습니다.'});
+  if(jeong && pyeon) notes.push({kind:'honjap', tone:'caution', t:label+' 혼잡('+EL[spE]+' 정·편 모두 천간 투출) — 인연이 산만해지거나 관계에 갈등 소지가 있을 수 있습니다.'});
   const clash = iljiSelfClash(c.db, c.yb, c.mb, c.hb);
-  if(clash) notes.push({kind:'selfclash', t:'일지(배우자궁)가 원국 내 '+clash.with+'와(과) 자체 '+clash.type+' 관계 — 배우자궁 자체가 구조적으로 불안정한 편입니다.'});
+  if(clash) notes.push({kind:'selfclash', tone:'caution', t:'일지(배우자궁)가 원국 내 '+clash.with+'와(과) 자체 '+clash.type+' 관계 — 배우자궁 자체가 구조적으로 불안정한 편입니다.'});
+  notes.push(iljiSipsungNote(c));
+  return notes;
+}
+// 원국 단독으로 판단 가능한 '인물의 그릇' — 상대와 무관, 표시 전용(점수 미반영)
+function personalCharacterNote(c){
+  const an = analyzeChart(c);
+  const notes = [];
+  if(an.jong) notes.push({kind:'extreme', tone:'caution',
+    t:'원국이 한쪽으로 크게 치우쳐('+(an.jong.type==='weak'?'종세(從勢)':'전왕(專旺)')+' 가능성) 삶의 기복이 클 수 있음 — '+an.jong.why});
+  if(!an.rooted) notes.push({kind:'norooted', tone:'caution',
+    t:'일간이 원국 어디에도 뿌리(통근)를 내리지 못해, 겉보기와 달리 근본 실속이 약할 수 있음'});
+  const yr = elemRatio(c, an.eokbu);
+  if(yr < 0.10) notes.push({kind:'noyong', tone:'caution',
+    t:'본인 용신('+EL[an.eokbu]+')이 원국에 거의 없어('+Math.round(yr*100)+'%) 외부(대운·인연)에 크게 의존하는 구조'});
   return notes;
 }
 
@@ -1130,10 +1186,7 @@ if(typeof document !== 'undefined'){
       html += '<div class="an-agree an-disagree">두 관점이 갈립니다 (억부: '+EL[an.eokbu]+' / 조후: '+EL[an.johu]+') — '
         +(extreme?'한여름·한겨울이라 조후를 무겁게 볼 수 있습니다.':'환절기라 억부를 기본으로 두길 권합니다.')+' 아래에서 선택하세요.</div>';
     }
-    { const pmn = personalMarriageNote(A);
-      html += '<p class="an-mar">' + (pmn.length
-        ? '<b>개인 배우자운 참고</b> — 궁합 점수와 무관, 원국 자체 특성(상대와 관계없이 항상 존재)<br>'+pmn.map(x=>'· '+x.t).join('<br>')
-        : '<b>개인 배우자운 참고</b> — 배우자성·배우자궁 구조상 특이사항 없음') + '</p>'; }
+    html += noteListHtml('개인 배우자운 참고 — 궁합 점수와 무관, 원국 자체 특성(상대와 관계없이 항상 존재)', personalMarriageNote(A));
     html += '<div class="yong-pick">'
       + '<label><input type="radio" name="yong-pick" value="eokbu" checked>억부 용신 적용: '+EL[an.eokbu]+'</label>'
       + (an.johu!=null?'<label><input type="radio" name="yong-pick" value="johu">조후 용신 적용: '+EL[an.johu]+'</label>':'')
@@ -1259,9 +1312,8 @@ if(typeof document !== 'undefined'){
       +'<div class="chips">'+chips+'</div>'
       +'<div class="result-top" style="margin-top:12px;"><span class="rdate">궁합 점수</span><span class="score">'+score+'점</span><span class="grade">'+gradeOf(score)+'</span>'+(unknown?'<span class="rhour">시간 모름 · 시진별 '+mn+'~'+mx+'</span>':'')+'</div>'
       +'<div class="reco-style" style="margin-top:6px;"><b>상대 스타일</b> — '+styleOf(B)+'</div>'
-      +(()=>{ const pmn=personalMarriageNote(B); return pmn.length
-          ? '<p class="an-mar" style="margin-top:6px;"><b>상대 개인 배우자운 참고</b> — 궁합 점수와 무관, 상대 원국 자체 특성<br>'+pmn.map(x=>'· '+x.t).join('<br>')+'</p>'
-          : ''; })()
+      +noteListHtml('상대 인물평가 참고 — 궁합 점수와 무관, 상대 원국 자체 특성', personalCharacterNote(B))
+      +noteListHtml('상대 개인 배우자운 참고 — 궁합 점수와 무관, 상대 원국 자체 특성', personalMarriageNote(B))
       +'<details open style="margin-top:8px;"><summary>점수 근거 ('+R.length+'항목)</summary><ul>'+li+'</ul></details>'
       +tlDataFor(res,B).html
       +'</div>';
@@ -1270,6 +1322,12 @@ if(typeof document !== 'undefined'){
   });
 
   // 오행 배경색 네모 (추천 Top5 전용) — □□일주
+  // 개인 배우자운/인물평가 노트 목록 렌더링 — tone에 따라 plus(양호)/minus(주의) 색상
+  function noteListHtml(title, notes){
+    if(!notes || !notes.length) return '';
+    const li = notes.map(x=>'· <span class="'+((x.tone==='caution'||x.tone==='worst')?'minus':'plus')+'">'+x.t+'</span>').join('<br>');
+    return '<p class="an-mar" style="margin-top:6px;"><b>'+title+'</b><br>'+li+'</p>';
+  }
   function iljuSquares(ds,db){
     return '<span class="sq t'+SE[ds]+'" title="일간 '+ST[ds]+'('+EL[SE[ds]]+')">'+ST[ds]+'</span>'
       +'<span class="sq t'+BE[db]+'" title="일지 '+BR[db]+'('+EL[BE[db]]+')">'+BR[db]+'</span> 일주';
@@ -1514,7 +1572,8 @@ if(typeof document !== 'undefined'){
         const dd=Math.abs(sp.s-d.avg); if(dd<repDiff){ repDiff=dd; repR=sp.R; }
       }
       const mar = personalMarriageNote(d.c); // 필터가 꺼져 있으면 형충 후보도 그대로 나오므로 항상 표시(필터는 선택적 배제일 뿐)
-      rows.push({rank:rows.length+1, c:d.c, score:d.avg, mn:d.mn, mx:d.mx, R:repR, tlHtml:tl.html, flow:tl.flow, tBest, tChung, tSpan, style:styleOf(d.c), mar});
+      const chr = personalCharacterNote(d.c);
+      rows.push({rank:rows.length+1, c:d.c, score:d.avg, mn:d.mn, mx:d.mx, R:repR, tlHtml:tl.html, flow:tl.flow, tBest, tChung, tSpan, style:styleOf(d.c), mar, chr});
       if(rows.length>=topN) break;
     }
     res.rows = rows; // CSV 내보내기용
@@ -1548,7 +1607,8 @@ if(typeof document !== 'undefined'){
         +'<div class="pgrid compact">'+tileCol('일주',c.ds,c.db)+tileCol('월주',c.ms,c.mb)+tileCol('년주',c.ys,c.yb)+'</div>'
         +'<div class="note" style="margin-top:6px;">대표 '+r.score+'점 = 12시진 평균(시간 미상의 기대값) · 시간 확정 시 '+r.mn+'~'+r.mx+' 사이</div>'
         +'<div class="reco-style" style="margin-top:6px;"><b>상대 스타일</b> — '+r.style+'</div>'
-        +(r.mar.length?'<p class="an-mar" style="margin-top:6px;">개인 배우자운 참고 — '+r.mar.map(x=>x.t).join(' · ')+'</p>':'')
+        +noteListHtml('인물평가 참고', r.chr)
+        +noteListHtml('개인 배우자운 참고', r.mar)
         +'<details><summary>점수 근거 보기 ('+r.R.length+'항목)</summary><ul>'+li+'</ul></details>'
         + r.tlHtml
         +'</div>');
@@ -1589,7 +1649,7 @@ if(typeof module!=='undefined' && module.exports){
     searchCandidates, candidateChart, hourLabel, pillarStr, gradeOf,
     analyzeChart, elemRatio, elemCount, yongScore, daewoonOf, timelineFor, windByYear, yearRanges,
     seunSignals, marriageYears, marriageYearsAll, daewoonMarriageBg, flowGrade, styleOf, dayPassesFilters, CUR_YEAR,
-    spouseElemOf, iljiSelfClash, personalMarriageNote };
+    spouseElemOf, iljiSelfClash, personalMarriageNote, personalCharacterNote, iljiSipsungOf, iljiSipsungTone };
 }
 </script>
 </body>

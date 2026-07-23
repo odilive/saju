@@ -62,13 +62,36 @@ ok('여명 배우자성 = 관성(금)', M.spouseElemOf({ ds: 1, g: 'F' }) === 3)
   const clash = M.iljiSelfClash(0, 3, 6, null);
   ok('시간 모름(hb=null)이어도 년지·월지로 판정', clash !== null, clash);
 }
-// ── 아무 특이사항 없는 원국 → 빈 배열
+// ── 무재무관·혼잡·형충 셋 다 없는 원국 → 일지십성만 항상 표시됨(나머지 3종은 없음)
 {
   // 갑목 남명(ds=0), 재성(토,2)은 ys=무(4)만 있어 편재 단독(혼잡 아님) → 무재 아님
   // db=인(2) vs yb자(0)/mb유(9)/hb해(11): diff 2/7/9로 형충 없음(형 pset엔 [2,5][2,8]만 있어 무관)
   const c2 = { ds: 0, g: 'M', ys: 4, ms: 6, hs: 8, yb: 0, mb: 9, db: 2, hb: 11 };
   const notes = M.personalMarriageNote(c2);
-  ok('특이사항 없으면 빈 배열', notes.length === 0, notes);
+  ok('무재무관·혼잡·형충 3종은 없음', !notes.some(x => ['nospouse','honjap','selfclash'].includes(x.kind)), notes);
+  ok('일지십성은 항상 표시됨(4번째 항목)', notes.some(x => x.kind === 'iljisipsung'), notes);
+}
+// ── 일지십성 판정: 성별별 정/편 gruop 정확도
+{
+  // 갑목(ds=0) 일간, db=인(2) → 본기 갑(0) → 같은음양·같은오행 → 비견(caution, 성별공통)
+  const name = M.iljiSipsungOf({ ds: 0, db: 2 });
+  ok('갑일간+인일지 → 비견', name === '비견', name);
+  ok('비견 tone(남명) = caution', M.iljiSipsungTone('비견','M') === 'caution');
+  ok('비견 tone(여명) = caution', M.iljiSipsungTone('비견','F') === 'caution');
+  // 을목(ds=1) 일간, db=축(1) → 본기 기(5,토) → 을(음)vs기(음) 같은음양 → 재성그룹 same→편재
+  const name2 = M.iljiSipsungOf({ ds: 1, db: 1 });
+  ok('을일간+축일지 → 편재', name2 === '편재', name2);
+  ok('편재 tone = good(성별무관)', M.iljiSipsungTone('편재','M') === 'good' && M.iljiSipsungTone('편재','F') === 'good');
+  // 갑목(ds=0,양) 일간, db=축(1) → 본기 기(5,음토) → 다른음양 → 재성그룹 diff→정재
+  const name3 = M.iljiSipsungOf({ ds: 0, db: 1 });
+  ok('갑일간+축일지 → 정재', name3 === '정재', name3);
+  ok('정재 tone(남명) = best(배우자성)', M.iljiSipsungTone('정재','M') === 'best');
+  ok('정재 tone(여명) = good(배우자성 아님)', M.iljiSipsungTone('정재','F') === 'good');
+  // 겁재/상관의 성별 비대칭 — 남명 겁재=worst, 여명 겁재=caution / 여명 상관=worst, 남명 상관=caution
+  ok('겁재 tone(남명) = worst', M.iljiSipsungTone('겁재','M') === 'worst');
+  ok('겁재 tone(여명) = caution', M.iljiSipsungTone('겁재','F') === 'caution');
+  ok('상관 tone(여명) = worst', M.iljiSipsungTone('상관','F') === 'worst');
+  ok('상관 tone(남명) = caution', M.iljiSipsungTone('상관','M') === 'caution');
 }
 
 // ── 필터 통합: searchCandidates에서 noIljiSelfClash 켜면 결과 감소 + 생존 후보는 실제로 형충 없음
