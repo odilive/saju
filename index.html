@@ -1253,6 +1253,9 @@ if(typeof document !== 'undefined'){
       +'<div class="result-item" style="margin-top:14px;">'
       +'<div class="pgrid">'+tileCol('시주',B.hs,B.hb)+tileCol('일주',B.ds,B.db)+tileCol('월주',B.ms,B.mb)+tileCol('년주',B.ys,B.yb)+'</div>'
       +'<p class="note" style="margin-top:8px;">'+dateStr+' · 일간 '+ST[B.ds]+'('+EL[SE[B.ds]]+') · '+ZODIAC[B.yb]+'띠 · '+vlab+'('+Math.round(an.r*100)+'%) · 억부용신 '+EL[an.eokbu]+(unknown?' · 시간 모름(6글자)':'')+'</p>'
+      +(unknown ? ('<details style="margin-top:6px;"><summary>시간대별 시주 보기 (12시진, 참고용 — 재채점 없음)</summary><ul>'
+          + Array.from({length:12},(_,hb)=>'<li>'+hourLabel(hb,corrected)+' — '+pillarStr(hourStemOf(B.ds,hb),hb)+'</li>').join('')
+          + '</ul></details>') : '')
       +'<div class="chips">'+chips+'</div>'
       +'<div class="result-top" style="margin-top:12px;"><span class="rdate">궁합 점수</span><span class="score">'+score+'점</span><span class="grade">'+gradeOf(score)+'</span>'+(unknown?'<span class="rhour">시간 모름 · 시진별 '+mn+'~'+mx+'</span>':'')+'</div>'
       +'<div class="reco-style" style="margin-top:6px;"><b>상대 스타일</b> — '+styleOf(B)+'</div>'
