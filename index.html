@@ -1193,7 +1193,6 @@ if(typeof document !== 'undefined'){
       + (an.jong?'<label><input type="radio" name="yong-pick" value="jong">종격 용신 적용: '+EL[an.jong.yong]+' (대세 추종)</label>':'')
       + '<label><input type="radio" name="yong-pick" value="manual">직접 선택:'
       + '<select id="yong-manual">'+EL.map((e,i)=>'<option value="'+i+'">'+e+'</option>').join('')+'</select></label>'
-      + '<label><input type="radio" name="yong-pick" value="none">용신·오행 미적용 — 합충·십성 관계만으로 채점</label>'
       + '</div>'
       + '<p class="note">선택한 용신이 아래 검색의 점수 계산에 반영됩니다. 잘 모르겠으면 추천값(억부)을 그대로 두세요.</p>';
     $('my-analysis').innerHTML = html;
